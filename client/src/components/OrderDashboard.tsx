@@ -140,7 +140,7 @@ export default function OrderDashboard() {
       );
     }
 
-    if (filters.situacaoFiscal) {
+    if (filters.situacaoFiscal && filters.situacaoFiscal !== "todos") {
       filtered = filtered.filter(order => {
         if (filters.situacaoFiscal === "faturado") {
           return order.situacaoFiscal.toLowerCase().includes("faturado");
@@ -152,7 +152,7 @@ export default function OrderDashboard() {
       });
     }
 
-    if (filters.situacaoComercial) {
+    if (filters.situacaoComercial && filters.situacaoComercial !== "todos") {
       filtered = filtered.filter(order => {
         if (filters.situacaoComercial === "aprovado") {
           return order.situacaoComercial.toLowerCase().includes("aprovado");
@@ -164,7 +164,7 @@ export default function OrderDashboard() {
       });
     }
 
-    if (filters.tipoEntrega) {
+    if (filters.tipoEntrega && filters.tipoEntrega !== "todos") {
       filtered = filtered.filter(order => {
         if (filters.tipoEntrega === "retirada") {
           return order.tipoEntrega.includes("Retirar na central");
@@ -181,17 +181,23 @@ export default function OrderDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-chart-3/10 relative">
+      {/* Glass background overlay */}
+      <div className="fixed inset-0 backdrop-blur-xs bg-gradient-to-br from-white/20 via-transparent to-primary/5 dark:from-background/20 dark:to-primary/10 pointer-events-none" />
+      
       {/* Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-white/20 shadow-lg">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-card/70 dark:bg-card/60 border-b border-border/30 shadow-2xl">
+        <div className="container mx-auto px-6 py-4 relative">
+          {/* Glass reflection effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent dark:via-white/5 pointer-events-none" />
+          
+          <div className="flex items-center justify-between relative z-10">
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-chart-1 bg-clip-text text-transparent" data-testid="text-app-title">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-chart-3 to-chart-1 bg-clip-text text-transparent tracking-tight" data-testid="text-app-title">
                 Sistema de Gestão de Pedidos
               </h1>
-              <p className="text-sm text-muted-foreground">
-                Gerencie pedidos com design Apple-inspired
+              <p className="text-sm text-muted-foreground font-light tracking-wide">
+                Design profissional com estilo vintage moderno
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -199,7 +205,7 @@ export default function OrderDashboard() {
                 variant="ghost"
                 size="icon"
                 onClick={toggleDarkMode}
-                className="rounded-full"
+                className="rounded-full backdrop-blur-md bg-white/20 dark:bg-gray-800/30 border border-white/30 hover:bg-white/30 hover:scale-105 transition-all duration-300"
                 data-testid="button-theme-toggle"
               >
                 {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -210,10 +216,13 @@ export default function OrderDashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <main className="container mx-auto px-6 py-8 relative z-10">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           {/* Tab Navigation */}
-          <TabsList className="grid w-full max-w-md grid-cols-3 backdrop-blur-md bg-white/80 dark:bg-gray-900/80">
+          <TabsList className="grid w-full max-w-md grid-cols-3 backdrop-blur-xl bg-card/60 dark:bg-card/50 border border-border/40 shadow-xl relative overflow-hidden">
+            {/* Glass shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent dark:via-white/10 pointer-events-none" />
+            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/50 to-transparent dark:via-white/30" />
             <TabsTrigger value="upload" className="flex items-center gap-2" data-testid="tab-upload">
               <Upload className="h-4 w-4" />
               Importar

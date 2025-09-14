@@ -4,81 +4,81 @@
 
 /* LIGHT MODE */
 :root {
-  --button-outline: rgba(0,0,0, .10);
-  --badge-outline: rgba(0,0,0, .05);
+  --button-outline: rgba(210,180,255, .15);
+  --badge-outline: rgba(210,180,255, .08);
 
   /* Automatic computation of border around primary / danger buttons */
   --opaque-button-border-intensity: -8; /* In terms of percentages */
 
   /* Backgrounds applied on top of other backgrounds when hovered/active */
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .08);
+  --elevate-1: rgba(210,180,255, .04);
+  --elevate-2: rgba(210,180,255, .12);
 
-  --background: 0 0% 98%;
+  --background: 150 20% 95%;
 
-  --foreground: 220 15% 15%;
+  --foreground: 270 15% 25%;
 
-  --border: 220 10% 88%;
+  --border: 250 15% 88%;
 
-  --card: 0 0% 96%;
+  --card: 270 25% 97%;
 
-  --card-foreground: 220 15% 15%;
+  --card-foreground: 270 15% 25%;
 
-  --card-border: 220 10% 85%;
+  --card-border: 250 15% 90%;
 
-  --sidebar: 0 0% 94%;
+  --sidebar: 270 20% 95%;
 
-  --sidebar-foreground: 220 15% 15%;
+  --sidebar-foreground: 270 15% 25%;
 
-  --sidebar-border: 220 10% 82%;
+  --sidebar-border: 250 15% 88%;
 
-  --sidebar-primary: 180 85% 45%;
+  --sidebar-primary: 270 25% 75%;
 
-  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-primary-foreground: 270 15% 25%;
 
-  --sidebar-accent: 0 0% 91%;
+  --sidebar-accent: 250 15% 92%;
 
-  --sidebar-accent-foreground: 220 15% 15%;
+  --sidebar-accent-foreground: 270 15% 25%;
 
-  --sidebar-ring: 180 85% 45%;
+  --sidebar-ring: 270 25% 75%;
 
-  --popover: 0 0% 92%;
+  --popover: 270 20% 94%;
 
-  --popover-foreground: 220 15% 15%;
+  --popover-foreground: 270 15% 25%;
 
-  --popover-border: 220 10% 80%;
+  --popover-border: 250 15% 85%;
 
-  --primary: 180 85% 45%;
+  --primary: 270 25% 75%;
 
-  --primary-foreground: 0 0% 98%;
+  --primary-foreground: 270 15% 25%;
 
-  --secondary: 0 0% 90%;
+  --secondary: 250 15% 90%;
 
-  --secondary-foreground: 220 15% 20%;
+  --secondary-foreground: 270 15% 30%;
 
-  --muted: 220 5% 87%;
+  --muted: 250 10% 87%;
 
-  --muted-foreground: 220 10% 45%;
+  --muted-foreground: 250 15% 55%;
 
-  --accent: 220 5% 85%;
+  --accent: 250 15% 85%;
 
-  --accent-foreground: 220 15% 25%;
+  --accent-foreground: 270 15% 30%;
 
-  --destructive: 0 70% 50%;
+  --destructive: 350 25% 70%;
 
-  --destructive-foreground: 0 0% 98%;
+  --destructive-foreground: 270 15% 25%;
 
-  --input: 220 10% 75%;
-  --ring: 180 85% 45%;
-  --chart-1: 120 60% 45%;
-  --chart-2: 35 85% 55%;
-  --chart-3: 180 85% 45%;
-  --chart-4: 260 75% 55%;
-  --chart-5: 320 65% 50%;
+  --input: 250 15% 80%;
+  --ring: 270 25% 75%;
+  --chart-1: 150 25% 70%;
+  --chart-2: 25 35% 75%;
+  --chart-3: 270 25% 75%;
+  --chart-4: 200 25% 75%;
+  --chart-5: 320 25% 75%;
 
-  --font-sans: Open Sans, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
+  --font-sans: 'Space Grotesk', 'Outfit', system-ui, sans-serif;
+  --font-serif: 'Space Grotesk', serif;
+  --font-mono: 'Space Grotesk', monospace;
   --radius: .5rem; /* 8px */
   --shadow-2xs: 0px 2px 0px 0px hsl(220 10% 65% / 0.05);
   --shadow-xs: 0px 2px 0px 0px hsl(220 10% 65% / 0.05);
@@ -123,77 +123,77 @@
 }
 
 .dark {
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
+  --button-outline: rgba(200,180,240, .15);
+  --badge-outline: rgba(200,180,240, .08);
 
   --opaque-button-border-intensity: 9;  /* In terms of percentages */
 
   /* Backgrounds applied on top of other backgrounds when hovered/active */
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
+  --elevate-1: rgba(200,180,240, .06);
+  --elevate-2: rgba(200,180,240, .14);
 
-  --background: 220 15% 12%;
+  --background: 270 15% 15%;
 
-  --foreground: 0 0% 95%;
+  --foreground: 250 15% 90%;
 
-  --border: 220 10% 20%;
+  --border: 270 10% 25%;
 
-  --card: 220 15% 15%;
+  --card: 270 20% 18%;
 
-  --card-foreground: 0 0% 95%;
+  --card-foreground: 250 15% 90%;
 
-  --card-border: 220 10% 25%;
+  --card-border: 270 10% 30%;
 
-  --sidebar: 220 15% 18%;
+  --sidebar: 270 15% 20%;
 
-  --sidebar-foreground: 0 0% 95%;
+  --sidebar-foreground: 250 15% 90%;
 
-  --sidebar-border: 220 10% 28%;
+  --sidebar-border: 270 10% 32%;
 
-  --sidebar-primary: 180 75% 35%;
+  --sidebar-primary: 270 30% 45%;
 
-  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-primary-foreground: 250 15% 90%;
 
-  --sidebar-accent: 220 15% 22%;
+  --sidebar-accent: 270 15% 25%;
 
-  --sidebar-accent-foreground: 0 0% 90%;
+  --sidebar-accent-foreground: 250 15% 85%;
 
-  --sidebar-ring: 180 75% 35%;
+  --sidebar-ring: 270 30% 45%;
 
-  --popover: 220 15% 20%;
+  --popover: 270 15% 22%;
 
-  --popover-foreground: 0 0% 95%;
+  --popover-foreground: 250 15% 90%;
 
-  --popover-border: 220 10% 30%;
+  --popover-border: 270 10% 35%;
 
-  --primary: 180 75% 35%;
+  --primary: 270 30% 45%;
 
-  --primary-foreground: 0 0% 98%;
+  --primary-foreground: 250 15% 90%;
 
-  --secondary: 220 15% 25%;
+  --secondary: 270 15% 28%;
 
-  --secondary-foreground: 0 0% 85%;
+  --secondary-foreground: 250 15% 80%;
 
-  --muted: 220 10% 23%;
+  --muted: 270 10% 26%;
 
-  --muted-foreground: 220 5% 65%;
+  --muted-foreground: 250 10% 65%;
 
-  --accent: 220 10% 25%;
+  --accent: 270 10% 28%;
 
-  --accent-foreground: 0 0% 85%;
+  --accent-foreground: 250 15% 80%;
 
-  --destructive: 0 70% 50%;
+  --destructive: 350 30% 50%;
 
-  --destructive-foreground: 0 0% 98%;
+  --destructive-foreground: 250 15% 90%;
 
   /* Used as the border around inputs. Dark mode: Should be a border that is light enough to have high contrast when rendered on a --card background. More contrast than standard --border */
-  --input: 220 10% 35%;
-  --ring: 180 75% 35%;
-  --chart-1: 120 50% 55%;
-  --chart-2: 35 75% 65%;
-  --chart-3: 180 75% 55%;
-  --chart-4: 260 65% 65%;
-  --chart-5: 320 55% 60%;
+  --input: 270 10% 40%;
+  --ring: 270 30% 45%;
+  --chart-1: 150 30% 55%;
+  --chart-2: 25 40% 65%;
+  --chart-3: 270 30% 55%;
+  --chart-4: 200 30% 55%;
+  --chart-5: 320 30% 55%;
 
   --shadow-2xs: 0px 2px 0px 0px hsl(220 15% 8% / 0.50);
   --shadow-xs: 0px 2px 0px 0px hsl(220 15% 8% / 0.50);

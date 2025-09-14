@@ -37,8 +37,13 @@ export default function OrderCard({ order }: OrderCardProps) {
   const quantityRanking = getQuantityRanking(order.qtdeItens);
 
   return (
-    <Card className="backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border border-white/20 shadow-lg hover-elevate transition-all duration-300" data-testid={`card-order-${order.codigoPedido}`}>
-      <CardContent className="p-6">
+    <Card className="backdrop-blur-xl bg-card/60 dark:bg-card/50 border border-border/40 shadow-2xl hover-elevate transition-all duration-500 relative overflow-hidden group" data-testid={`card-order-${order.codigoPedido}`}>
+      {/* Glass reflection overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-primary/5 dark:from-white/5 dark:to-primary/10 pointer-events-none" />
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/40" />
+      <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-radial from-primary/10 to-transparent dark:from-primary/5 opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
+      
+      <CardContent className="p-6 relative z-10">
         {/* Header with Order Code and Main Status */}
         <div className="flex items-start justify-between mb-4">
           <div>

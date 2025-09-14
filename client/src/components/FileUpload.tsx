@@ -145,8 +145,12 @@ export default function FileUpload({ onFileProcessed }: FileUploadProps) {
   };
 
   return (
-    <Card className="backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border border-white/20 shadow-lg">
-      <CardContent className="p-6">
+    <Card className="backdrop-blur-xl bg-card/60 dark:bg-card/50 border border-border/40 shadow-2xl relative overflow-hidden">
+      {/* Glass reflection overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-chart-2/5 dark:from-white/5 dark:to-chart-2/10 pointer-events-none" />
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/40" />
+      
+      <CardContent className="p-6 relative z-10">
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold mb-2">Importar Planilha de Pedidos</h3>

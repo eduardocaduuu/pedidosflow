@@ -38,8 +38,12 @@ export default function MapViewer({ order }: MapViewerProps) {
   };
 
   return (
-    <Card className="backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border border-white/20 shadow-lg">
-      <CardHeader className="pb-3">
+    <Card className="backdrop-blur-xl bg-card/60 dark:bg-card/50 border border-border/40 shadow-2xl relative overflow-hidden">
+      {/* Glass reflection overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-chart-4/5 dark:from-white/5 dark:to-chart-4/10 pointer-events-none" />
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/40" />
+      
+      <CardHeader className="pb-3 relative z-10">
         <CardTitle className="flex items-center gap-2 text-lg">
           {isStorePickup ? <Store className="h-5 w-5" /> : <Home className="h-5 w-5" />}
           {isStorePickup ? "Local de Retirada" : "Endereço de Entrega"}

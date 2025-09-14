@@ -1,20 +1,20 @@
 # Order Management Application Design Guidelines
 
 ## Design Approach
-**Reference-Based Approach**: Apple-inspired liquid glass aesthetic with modern minimalista design, emphasizing clean typography, subtle shadows, and frosted glass effects for a premium feel.
+**Glass Mirror Professional Style**: Sophisticated mirror/glass aesthetic with 70s/80s vintage typography, emphasizing frosted glass effects, pastel colors, and classic design elements for a premium professional feel that blends retro charm with modern functionality.
 
 ## Core Design Elements
 
 ### A. Color Palette
-**Primary Colors:**
-- Light Mode: Turquoise primary (180 85% 45%), White backgrounds (0 0% 98%)
-- Dark Mode: Deep turquoise (180 75% 35%), Dark gray backgrounds (220 15% 12%)
+**Pastel Primary Colors:**
+- Light Mode: Soft lavender primary (270 25% 85%), Pastel mint backgrounds (150 20% 95%)
+- Dark Mode: Deep lavender (270 30% 25%), Charcoal with pastel tints (220 15% 15%)
 
-**Supporting Colors:**
-- Success: Green (120 60% 45%) for paid orders
-- Warning: Orange (35 85% 55%) for pending payments
-- Error: Red (0 70% 50%) for overdue items
-- Neutral grays: (220 10% 65%) for secondary text
+**Pastel Supporting Colors:**
+- Success: Pastel mint green (150 25% 70%) for paid orders
+- Warning: Soft peach (25 35% 75%) for pending payments
+- Error: Dusty rose (350 25% 70%) for overdue items
+- Neutral pastels: Soft gray-lavender (250 15% 75%) for secondary text
 
 ### B. Typography
 **Primary Font**: SF Pro Display (Apple system font) or Inter as fallback

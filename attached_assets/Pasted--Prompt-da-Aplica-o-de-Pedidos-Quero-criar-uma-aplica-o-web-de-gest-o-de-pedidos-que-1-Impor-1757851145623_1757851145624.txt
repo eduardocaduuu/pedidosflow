@@ -1,0 +1,82 @@
+⸻
+
+Prompt da Aplicação de Pedidos
+
+Quero criar uma aplicação web de gestão de pedidos que:
+	1.	Importa planilhas Excel com várias colunas, mas deve considerar apenas as seguintes colunas:
+
+	•	CodigoPedido
+	•	SituaçãoFiscal
+	•	Pessoa
+	•	NomePessoa
+	•	Papel
+	•	QtdeItens
+	•	ValorPedido
+	•	Tipo de Entrega
+	•	SituaçãoComercial
+	•	Data Aprovação
+	•	PrevisãoEntrega
+	•	Ciclo Captação
+	•	Dia do Ciclo
+	•	PlanoPagamento
+	•	Logradouro
+	•	Complemento
+	•	Bairro
+	•	Cidade
+	•	UF
+	•	CEP
+	•	Referência
+	•	BairroEntregaRetirada
+	•	CidadeEntregaRetirada
+	•	ReferênciaEntregaRetirada
+	•	Telefone
+	•	Responsável Estrutura
+	•	Usuário de Finalização
+
+⸻
+
+Regras e Funcionalidades da Aplicação
+	1.	Visualização detalhada dos pedidos:
+	•	Mostrar o Código do Pedido.
+	•	Indicar se o pedido está faturado ou não, baseado na coluna SituaçãoFiscal.
+	•	Mostrar o código da pessoa (Pessoa) e o nome (NomePessoa).
+	•	Mostrar o Papel da pessoa e ranquear o quanto ela é valiosa para a empresa.
+	•	Ranquear pedidos por:
+	•	quantidade de itens (QtdeItens)
+	•	valor do pedido (ValorPedido)
+	2.	Entrega:
+	•	Se Tipo de Entrega = Retirar na central de serviço, mostrar que o cliente buscará o pedido na loja.
+	•	Se Tipo de Entrega = No endereço da entrega, mostrar que o cliente pagou frete e receberá em casa.
+	3.	Situação do Pedido:
+	•	Coluna SituaçãoComercial indica se está Aprovado ou não.
+	•	Coluna Data Aprovação mostra data e hora da aprovação.
+	•	Coluna PrevisãoEntrega mostra a data estimada de entrega.
+	•	Sincronizar estas duas colunas com um calendário interativo para facilitar o acompanhamento.
+	4.	Ciclo da Empresa:
+	•	Ciclo Captação tem formato MM/AAAA (ex.: 13/2025). Mostrar apenas os dois primeiros dígitos (ex.: 13) que representam o ciclo.
+	•	Dia do Ciclo indica em qual dia do ciclo o pedido foi feito/aprovado.
+	5.	Pagamento:
+	•	PlanoPagamento:
+	•	Se valor = BOLETO, Parcele com Pix ou Cartão de Crédito ON-LINE → significa que já foi pago.
+	•	Outras opções → ainda não foi pago.
+	6.	Endereço:
+	•	Usar as colunas Logradouro, Complemento, Bairro, Cidade, UF, CEP, Referência, BairroEntregaRetirada, CidadeEntregaRetirada, ReferênciaEntregaRetirada, Telefone.
+	•	Gerar mapa real interativo (ex.: integração com Google Maps) mostrando onde o cliente quer receber ou retirar o pedido.
+	7.	Funcionários envolvidos:
+	•	Responsável Estrutura: funcionário que ajudou o cliente a fazer e aprovar o pedido.
+	•	Usuário de Finalização: funcionário que ajudou o cliente a finalizar o pedido.
+	•	Mostrar estes dados de forma inteligente no painel de cada pedido.
+
+⸻
+
+Layout da Aplicação
+	•	O design deve ser moderno e minimalista, inspirado no liquid glass da Apple .
+	•	Cada pedido deve ser exibido como um card interativo, com abas ou blocos expansíveis para:
+	•	Dados principais do pedido
+	•	Situação fiscal e comercial
+	•	Entrega e datas sincronizadas com calendário
+	•	Ciclo da empresa
+	•	Endereço e mapa de entrega
+	•	Funcionários responsáveis
+
+⸻

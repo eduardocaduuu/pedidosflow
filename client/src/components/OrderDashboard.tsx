@@ -179,11 +179,12 @@ export default function OrderDashboard() {
 
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
-            <FilterBar
             {/* Statistics Card */}
             {orders.length > 0 && (
               <OrderStatistics orders={orders} />
             )}
+
+            <FilterBar
               onFilterChange={handleFilterChange}
               totalOrders={filteredOrders.length}
             />

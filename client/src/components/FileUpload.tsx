@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Upload, FileText, Check, AlertCircle } from "lucide-react";
+import { Upload, FileText, Check, AlertCircle, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface FileUploadProps {
@@ -18,6 +18,8 @@ export default function FileUpload({ onFileProcessed }: FileUploadProps) {
     success: boolean;
     message: string;
     ordersCount?: number;
+    warnings?: string[];
+    skippedRows?: number;
   } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -101,22 +103,37 @@ export default function FileUpload({ onFileProcessed }: FileUploadProps) {
         throw new Error(result.error || 'Upload failed');
       }
 
+      let message = result.message;
+      if (result.skippedRows && result.skippedRows > 0) {
+        message += ` (${result.skippedRows} linhas com problemas de formato foram ignoradas)`;
+      }
+
       setProcessResult({
         success: true,
-        message: result.message,
-        ordersCount: result.ordersProcessed
+        message: message,
+        ordersCount: result.ordersProcessed,
+        warnings: result.warnings,
+        skippedRows: result.skippedRows
       });
 
       // Trigger refresh of orders list
       onFileProcessed?.();
 
+      const successMessage = result.skippedRows > 0
+        ? `${result.ordersProcessed} de ${result.totalRows} pedidos importados`
+        : `${result.ordersProcessed} pedidos importados com sucesso`;
+
       toast({
-        title: "Sucesso!",
-        description: `${result.ordersProcessed} pedidos importados com sucesso.`,
+        title: "Arquivo processado!",
+        description: successMessage,
       });
 
+      if (result.warnings && result.warnings.length > 0) {
+        console.warn('Processing warnings:', result.warnings);
+      }
+
       if (result.errors && result.errors.length > 0) {
-        console.warn('Processing warnings:', result.errors);
+        console.warn('Processing errors:', result.errors);
       }
 
     } catch (error) {
@@ -223,26 +240,51 @@ export default function FileUpload({ onFileProcessed }: FileUploadProps) {
 
               {/* Result */}
               {processResult && (
-                <div className={`flex items-center gap-3 p-4 rounded-lg ${
-                  processResult.success
-                    ? 'bg-chart-1/10 border border-chart-1/20'
-                    : 'bg-destructive/10 border border-destructive/20'
-                }`}>
-                  {processResult.success ? (
-                    <Check className="h-5 w-5 text-chart-1" />
-                  ) : (
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                  )}
-                  <div className="flex-1">
-                    <p className="font-medium" data-testid="text-process-result">
-                      {processResult.message}
-                    </p>
-                    {processResult.ordersCount && (
-                      <p className="text-sm text-muted-foreground">
-                        {processResult.ordersCount} pedidos encontrados
-                      </p>
+                <div className="space-y-3">
+                  <div className={`flex items-center gap-3 p-4 rounded-lg ${
+                    processResult.success
+                      ? 'bg-chart-1/10 border border-chart-1/20'
+                      : 'bg-destructive/10 border border-destructive/20'
+                  }`}>
+                    {processResult.success ? (
+                      <Check className="h-5 w-5 text-chart-1" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-destructive" />
                     )}
+                    <div className="flex-1">
+                      <p className="font-medium" data-testid="text-process-result">
+                        {processResult.message}
+                      </p>
+                      {processResult.ordersCount && (
+                        <p className="text-sm text-muted-foreground">
+                          {processResult.ordersCount} pedidos carregados
+                        </p>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Warnings */}
+                  {processResult.warnings && processResult.warnings.length > 0 && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                        <span className="text-sm font-medium text-yellow-800">
+                          Avisos de formatação ({processResult.warnings.length})
+                        </span>
+                      </div>
+                      <div className="text-xs text-yellow-700 max-h-32 overflow-y-auto">
+                        {processResult.warnings.slice(0, 5).map((warning, index) => (
+                          <div key={index}>{warning}</div>
+                        ))}
+                        {processResult.warnings.length > 5 && (
+                          <div className="italic">E mais {processResult.warnings.length - 5} avisos...</div>
+                        )}
+                      </div>
+                      <p className="text-xs text-yellow-600 mt-2">
+                        Algumas datas podem estar em formato incorreto, mas os pedidos foram processados normalmente.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

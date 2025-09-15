@@ -12,6 +12,60 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
+// Safe date parsing function
+function parseExcelDate(value: any): Date | undefined {
+  if (!value) return undefined;
+
+  try {
+    // If it's already a Date object
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? undefined : value;
+    }
+
+    // If it's a string
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed ||
+          trimmed.toLowerCase() === 'null' ||
+          trimmed.toLowerCase() === 'undefined' ||
+          trimmed === '' ||
+          trimmed === '-') {
+        return undefined;
+      }
+
+      // Try parsing various date formats
+      const date = new Date(trimmed);
+      return isNaN(date.getTime()) ? undefined : date;
+    }
+
+    // If it's a number (Excel serial date)
+    if (typeof value === 'number') {
+      // Excel date serial number conversion
+      const excelEpoch = new Date(1900, 0, 1);
+      const date = new Date(excelEpoch.getTime() + (value - 1) * 24 * 60 * 60 * 1000);
+      return isNaN(date.getTime()) ? undefined : date;
+    }
+
+    return undefined;
+  } catch (error) {
+    console.warn('Failed to parse date:', value, error);
+    return undefined;
+  }
+}
+
+// Safe string conversion
+function safeString(value: any, defaultValue: string = ''): string {
+  if (value === null || value === undefined) return defaultValue;
+  return String(value).trim();
+}
+
+// Safe number conversion
+function safeNumber(value: any, defaultValue: number = 0): number {
+  if (value === null || value === undefined || value === '') return defaultValue;
+  const num = Number(value);
+  return isNaN(num) ? defaultValue : num;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get all orders
@@ -57,6 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Map Excel columns to our schema
       const orders: InsertOrder[] = [];
       const errors: string[] = [];
+      const warnings: string[] = [];
       const timestamp = Date.now();
 
       for (let i = 0; i < jsonData.length; i++) {
@@ -65,44 +120,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // Map Excel columns using exact column names from user specification
           const orderData: InsertOrder = {
-            codigoPedido: String(row['CodigoPedido'] || row['Código do Pedido'] || `PED${timestamp}-${i}`),
-            situacaoFiscal: String(row['SituaçãoFiscal'] || row['Situação Fiscal'] || 'Não informado'),
-            pessoa: String(row['Pessoa'] || ''),
-            nomePessoa: String(row['NomePessoa'] || row['Nome da Pessoa'] || ''),
-            papel: String(row['Papel'] || 'Cliente'),
-            qtdeItens: Number(row['QtdeItens'] || row['Quantidade de Itens'] || 0),
-            valorPedido: String(row['ValorPedido'] || row['Valor do Pedido'] || '0.00'),
-            tipoEntrega: String(row['Tipo de Entrega'] || 'No endereço da entrega'),
-            situacaoComercial: String(row['SituaçãoComercial'] || row['Situação Comercial'] || 'Pendente'),
-            dataAprovacao: row['Data Aprovação'] || row['Data de Aprovação'] ? new Date(row['Data Aprovação'] || row['Data de Aprovação']) : undefined,
-            previsaoEntrega: row['PrevisãoEntrega'] || row['Previsão de Entrega'] ? new Date(row['PrevisãoEntrega'] || row['Previsão de Entrega']) : undefined,
-            cicloCaptacao: String(row['Ciclo Captação'] || row['Ciclo de Captação'] || '1/2024'),
-            diaCiclo: Number(row['Dia do Ciclo'] || 1),
-            planoPagamento: String(row['PlanoPagamento'] || row['Plano de Pagamento'] || 'A vista'),
-            logradouro: String(row['Logradouro'] || ''),
-            complemento: String(row['Complemento'] || ''),
-            bairro: String(row['Bairro'] || ''),
-            cidade: String(row['Cidade'] || ''),
-            uf: String(row['UF'] || ''),
-            cep: String(row['CEP'] || ''),
-            referencia: String(row['Referência'] || ''),
-            bairroEntregaRetirada: String(row['BairroEntregaRetirada'] || row['Bairro Entrega/Retirada'] || ''),
-            cidadeEntregaRetirada: String(row['CidadeEntregaRetirada'] || row['Cidade Entrega/Retirada'] || ''),
-            referenciaEntregaRetirada: String(row['ReferênciaEntregaRetirada'] || row['Referência Entrega/Retirada'] || ''),
-            telefone: String(row['Telefone'] || ''),
-            responsavelEstrutura: String(row['Responsável Estrutura'] || ''),
-            usuarioFinalizacao: String(row['Usuário de Finalização'] || '')
+            codigoPedido: safeString(row['CodigoPedido'] || row['Código do Pedido'], `PED${timestamp}-${i}`),
+            situacaoFiscal: safeString(row['SituaçãoFiscal'] || row['Situação Fiscal'], 'Não informado'),
+            pessoa: safeString(row['Pessoa']),
+            nomePessoa: safeString(row['NomePessoa'] || row['Nome da Pessoa']),
+            papel: safeString(row['Papel'], 'Cliente'),
+            qtdeItens: safeNumber(row['QtdeItens'] || row['Quantidade de Itens']),
+            valorPedido: safeString(row['ValorPedido'] || row['Valor do Pedido'], '0.00'),
+            tipoEntrega: safeString(row['Tipo de Entrega'], 'No endereço da entrega'),
+            situacaoComercial: safeString(row['SituaçãoComercial'] || row['Situação Comercial'], 'Pendente'),
+            // Safe date parsing
+            dataAprovacao: parseExcelDate(row['Data Aprovação'] || row['Data de Aprovação']),
+            previsaoEntrega: parseExcelDate(row['PrevisãoEntrega'] || row['Previsão de Entrega']),
+            cicloCaptacao: safeString(row['Ciclo Captação'] || row['Ciclo de Captação'], '1/2024'),
+            diaCiclo: safeNumber(row['Dia do Ciclo'], 1),
+            planoPagamento: safeString(row['PlanoPagamento'] || row['Plano de Pagamento'], 'A vista'),
+            logradouro: safeString(row['Logradouro']),
+            complemento: safeString(row['Complemento']),
+            bairro: safeString(row['Bairro']),
+            cidade: safeString(row['Cidade']),
+            uf: safeString(row['UF']),
+            cep: safeString(row['CEP']),
+            referencia: safeString(row['Referência']),
+            bairroEntregaRetirada: safeString(row['BairroEntregaRetirada'] || row['Bairro Entrega/Retirada']),
+            cidadeEntregaRetirada: safeString(row['CidadeEntregaRetirada'] || row['Cidade Entrega/Retirada']),
+            referenciaEntregaRetirada: safeString(row['ReferênciaEntregaRetirada'] || row['Referência Entrega/Retirada']),
+            telefone: safeString(row['Telefone']),
+            responsavelEstrutura: safeString(row['Responsável Estrutura']),
+            usuarioFinalizacao: safeString(row['Usuário de Finalização'])
           };
 
           // Validate the data
           const validatedOrder = insertOrderSchema.parse(orderData);
           orders.push(validatedOrder);
 
+          // Check for missing important data and add warnings
+          if (!orderData.dataAprovacao && (row['Data Aprovação'] || row['Data de Aprovação'])) {
+            warnings.push(`Row ${i + 2}: Invalid approval date format`);
+          }
+          if (!orderData.previsaoEntrega && (row['PrevisãoEntrega'] || row['Previsão de Entrega'])) {
+            warnings.push(`Row ${i + 2}: Invalid delivery forecast date format`);
+          }
+
         } catch (error) {
           if (error instanceof z.ZodError) {
             errors.push(`Row ${i + 2}: ${error.errors.map(e => e.message).join(', ')}`);
           } else {
-            errors.push(`Row ${i + 2}: Invalid data format`);
+            errors.push(`Row ${i + 2}: ${error instanceof Error ? error.message : 'Invalid data format'}`);
           }
         }
       }
@@ -121,7 +185,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "File processed successfully",
         ordersProcessed: savedOrders.length,
         totalRows: jsonData.length,
-        errors: errors.length > 0 ? errors : undefined
+        skippedRows: jsonData.length - savedOrders.length,
+        errors: errors.length > 0 ? errors : undefined,
+        warnings: warnings.length > 0 ? warnings : undefined
       });
 
     } catch (error) {

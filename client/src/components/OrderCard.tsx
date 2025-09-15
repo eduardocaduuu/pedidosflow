@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, User, Package, Calendar, MapPin, CreditCard, Users, Phone, Star } from "lucide-react";
+import { ChevronDown, User, Package, Calendar, MapPin, CreditCard, Users, Phone } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import StatusBadge from "./StatusBadge";
@@ -31,20 +31,6 @@ export default function OrderCard({ order }: OrderCardProps) {
     return { level: "Baixa", color: "text-muted-foreground", priority: 1 };
   };
 
-  const getPersonValueRanking = (papel: string) => {
-    const lowerPapel = papel.toLowerCase();
-    if (lowerPapel.includes('premium') || lowerPapel.includes('vip')) {
-      return { level: "Cliente Premium", color: "bg-chart-1", stars: 5 };
-    }
-    if (lowerPapel.includes('especial') || lowerPapel.includes('gold')) {
-      return { level: "Cliente Especial", color: "bg-chart-3", stars: 4 };
-    }
-    if (lowerPapel.includes('regular') || lowerPapel.includes('padrão')) {
-      return { level: "Cliente Regular", color: "bg-chart-2", stars: 3 };
-    }
-    return { level: "Cliente", color: "bg-muted", stars: 2 };
-  };
-
   const getCycleDisplay = (cicloCaptacao: string) => {
     return cicloCaptacao.substring(0, 2);
   };
@@ -61,18 +47,8 @@ export default function OrderCard({ order }: OrderCardProps) {
     return phone;
   };
 
-  const renderStars = (count: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`h-3 w-3 ${i < count ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-      />
-    ));
-  };
-
   const valueRanking = getValueRanking(order.valorPedido);
   const quantityRanking = getQuantityRanking(order.qtdeItens);
-  const personRanking = getPersonValueRanking(order.papel);
 
   return (
     <Card className="backdrop-blur-xl bg-card/60 dark:bg-card/50 border border-border/40 shadow-2xl hover-elevate transition-all duration-500 relative overflow-hidden group h-fit" data-testid={`card-order-${order.codigoPedido}`}>
@@ -95,7 +71,7 @@ export default function OrderCard({ order }: OrderCardProps) {
               </div>
             </div>
 
-            {/* Customer Info with Value Ranking */}
+            {/* Customer Info */}
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="h-4 w-4 flex-shrink-0" />
@@ -104,13 +80,11 @@ export default function OrderCard({ order }: OrderCardProps) {
                 </span>
               </div>
 
+              {/* Client Role/Value - Use Papel directly */}
               <div className="flex items-center gap-2">
-                <Badge className={`${personRanking.color} text-white text-xs`}>
-                  {personRanking.level}
+                <Badge variant="outline" className="text-xs">
+                  {order.papel}
                 </Badge>
-                <div className="flex items-center gap-1">
-                  {renderStars(personRanking.stars)}
-                </div>
               </div>
             </div>
           </div>

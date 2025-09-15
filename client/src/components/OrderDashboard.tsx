@@ -5,6 +5,7 @@ import { LayoutGrid, Upload, Filter, Map, Moon, Sun, Loader2 } from "lucide-reac
 import OrderCard from "./OrderCard";
 import FileUpload from "./FileUpload";
 import FilterBar, { type FilterOptions } from "./FilterBar";
+import OrderStatistics from "./OrderStatistics";
 import MapViewer from "./MapViewer";
 import type { Order } from "@shared/schema";
 
@@ -179,6 +180,10 @@ export default function OrderDashboard() {
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
             <FilterBar
+            {/* Statistics Card */}
+            {orders.length > 0 && (
+              <OrderStatistics orders={orders} />
+            )}
               onFilterChange={handleFilterChange}
               totalOrders={filteredOrders.length}
             />

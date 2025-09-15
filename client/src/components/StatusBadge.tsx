@@ -31,8 +31,24 @@ export default function StatusBadge({ type, status, className }: StatusBadgeProp
         };
 
       case "fiscal":
-        const isBilled = status.toLowerCase().includes("faturado");
-        if (isBilled) {
+        // Fix: Check specifically for "NAO FATURADO" vs "FATURADO"
+        const statusLower = status.toLowerCase().trim();
+        const isNotBilled = statusLower.includes("nao faturado") ||
+                           statusLower.includes("não faturado") ||
+                           statusLower === "nao faturado" ||
+                           statusLower === "não faturado";
+
+        if (isNotBilled) {
+          return {
+            variant: "secondary" as const,
+            icon: AlertTriangle,
+            label: "Não Faturado",
+            className: "bg-destructive text-white shrink-0"
+          };
+        }
+
+        // Only consider "FATURADO" (without NAO/NÃO) as billed
+        if (statusLower === "faturado") {
           return {
             variant: "default" as const,
             icon: CheckCircle,
@@ -40,11 +56,13 @@ export default function StatusBadge({ type, status, className }: StatusBadgeProp
             className: "bg-chart-1 text-white shrink-0"
           };
         }
+
+        // Default to not billed for any other case
         return {
           variant: "secondary" as const,
           icon: AlertTriangle,
           label: "Não Faturado",
-          className: "bg-chart-2 text-white shrink-0"
+          className: "bg-destructive text-white shrink-0"
         };
 
       case "commercial":

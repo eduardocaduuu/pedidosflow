@@ -12,20 +12,36 @@ export default function OrderStatistics({ orders }: OrderStatisticsProps) {
   const totalOrders = orders.length;
   const totalValue = orders.reduce((sum, order) => sum + parseFloat(order.valorPedido), 0);
 
+  // Debug: Log all unique delivery types
+  const uniqueDeliveryTypes = [...new Set(orders.map(order => order.tipoEntrega))];
+  console.log('Unique delivery types found:', uniqueDeliveryTypes);
+
   const homeDeliveries = orders.filter(order => {
     const tipoEntrega = order.tipoEntrega.toLowerCase().trim();
-    return tipoEntrega.includes("no endereço da entrega") ||
+    const isHomeDelivery = tipoEntrega.includes("no endereço da entrega") ||
            tipoEntrega.includes("no endereco da entrega") ||
            tipoEntrega.includes("endereço da entrega") ||
            tipoEntrega.includes("endereco da entrega");
+
+    if (isHomeDelivery) {
+      console.log('Home delivery found:', order.tipoEntrega);
+    }
+
+    return isHomeDelivery;
   }).length;
 
   const storePickups = orders.filter(order => {
     const tipoEntrega = order.tipoEntrega.toLowerCase().trim();
-    return tipoEntrega.includes("retirar na central de serviço") ||
+    const isStorePickup = tipoEntrega.includes("retirar na central de serviço") ||
            tipoEntrega.includes("retirar na central de servico") ||
            tipoEntrega.includes("central de serviço") ||
            tipoEntrega.includes("central de servico");
+
+    if (isStorePickup) {
+      console.log('Store pickup found:', order.tipoEntrega);
+    }
+
+    return isStorePickup;
   }).length;
 
   const paidOrders = orders.filter(order => {

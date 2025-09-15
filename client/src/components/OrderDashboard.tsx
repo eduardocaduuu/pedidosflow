@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutGrid, Upload, Filter, Map, Moon, Sun, Loader2 } from "lucide-react";
+import { LayoutGrid, Upload, Filter, Map, Moon, Sun, Loader2, BarChart3 } from "lucide-react";
 import OrderCard from "./OrderCard";
 import FileUpload from "./FileUpload";
 import FilterBar, { type FilterOptions } from "./FilterBar";
 import OrderStatistics from "./OrderStatistics";
+import ResponsavelFilter from "./ResponsavelFilter";
+import Reports from "./Reports";
 import MapViewer from "./MapViewer";
 import type { Order } from "@shared/schema";
 
@@ -15,6 +17,7 @@ export default function OrderDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedResponsavel, setSelectedResponsavel] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +54,11 @@ export default function OrderDashboard() {
     loadOrders();
   }, []);
 
+  // Reapply filters when selectedResponsavel changes
+  useEffect(() => {
+    applyFilters();
+  }, [selectedResponsavel, orders]);
+
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
     document.documentElement.classList.toggle('dark');
@@ -63,48 +71,57 @@ export default function OrderDashboard() {
     setActiveTab("orders");
   };
 
-  const handleFilterChange = (filters: FilterOptions) => {
+  // Apply all filters (both FilterBar and ResponsavelFilter)
+  const applyFilters = (filterOptions?: FilterOptions) => {
     let filtered = [...orders];
 
-    if (filters.search) {
+    // Apply ResponsavelFilter
+    if (selectedResponsavel) {
       filtered = filtered.filter(order =>
-        order.codigoPedido.toLowerCase().includes(filters.search.toLowerCase()) ||
-        order.nomePessoa.toLowerCase().includes(filters.search.toLowerCase()) ||
-        order.responsavelEstrutura?.toLowerCase().includes(filters.search.toLowerCase()) ||
-        order.usuarioFinalizacao?.toLowerCase().includes(filters.search.toLowerCase())
+        order.responsavelEstrutura === selectedResponsavel
       );
     }
 
-    if (filters.situacaoFiscal && filters.situacaoFiscal !== "todos") {
+    // Apply FilterBar filters
+    if (filterOptions?.search) {
+      filtered = filtered.filter(order =>
+        order.codigoPedido.toLowerCase().includes(filterOptions.search.toLowerCase()) ||
+        order.nomePessoa.toLowerCase().includes(filterOptions.search.toLowerCase()) ||
+        order.responsavelEstrutura?.toLowerCase().includes(filterOptions.search.toLowerCase()) ||
+        order.usuarioFinalizacao?.toLowerCase().includes(filterOptions.search.toLowerCase())
+      );
+    }
+
+    if (filterOptions?.situacaoFiscal && filterOptions.situacaoFiscal !== "todos") {
       filtered = filtered.filter(order => {
-        if (filters.situacaoFiscal === "faturado") {
+        if (filterOptions.situacaoFiscal === "faturado") {
           return order.situacaoFiscal.toLowerCase().includes("faturado");
         }
-        if (filters.situacaoFiscal === "nao-faturado") {
+        if (filterOptions.situacaoFiscal === "nao-faturado") {
           return !order.situacaoFiscal.toLowerCase().includes("faturado");
         }
         return true;
       });
     }
 
-    if (filters.situacaoComercial && filters.situacaoComercial !== "todos") {
+    if (filterOptions?.situacaoComercial && filterOptions.situacaoComercial !== "todos") {
       filtered = filtered.filter(order => {
-        if (filters.situacaoComercial === "aprovado") {
+        if (filterOptions.situacaoComercial === "aprovado") {
           return order.situacaoComercial.toLowerCase().includes("aprovado");
         }
-        if (filters.situacaoComercial === "pendente") {
+        if (filterOptions.situacaoComercial === "pendente") {
           return !order.situacaoComercial.toLowerCase().includes("aprovado");
         }
         return true;
       });
     }
 
-    if (filters.tipoEntrega && filters.tipoEntrega !== "todos") {
+    if (filterOptions?.tipoEntrega && filterOptions.tipoEntrega !== "todos") {
       filtered = filtered.filter(order => {
-        if (filters.tipoEntrega === "retirada") {
+        if (filterOptions.tipoEntrega === "retirada") {
           return order.tipoEntrega.includes("Retirar na central");
         }
-        if (filters.tipoEntrega === "entrega") {
+        if (filterOptions.tipoEntrega === "entrega") {
           return order.tipoEntrega.includes("endereço da entrega");
         }
         return true;
@@ -113,6 +130,14 @@ export default function OrderDashboard() {
 
     setFilteredOrders(filtered);
     console.log('Filtered orders:', filtered.length, 'of', orders.length);
+  };
+
+  const handleFilterChange = (filters: FilterOptions) => {
+    applyFilters(filters);
+  };
+
+  const handleResponsavelChange = (responsavel: string | null) => {
+    setSelectedResponsavel(responsavel);
   };
 
   return (
@@ -154,7 +179,7 @@ export default function OrderDashboard() {
       <main className="container mx-auto px-6 py-8 relative z-10">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           {/* Tab Navigation */}
-          <TabsList className="grid w-full max-w-md grid-cols-3 backdrop-blur-xl bg-card/60 dark:bg-card/50 border border-border/40 shadow-xl relative overflow-hidden">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4 backdrop-blur-xl bg-card/60 dark:bg-card/50 border border-border/40 shadow-xl relative overflow-hidden">
             {/* Glass shine effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent dark:via-white/10 pointer-events-none" />
             <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/50 to-transparent dark:via-white/30" />
@@ -165,6 +190,10 @@ export default function OrderDashboard() {
             <TabsTrigger value="orders" className="flex items-center gap-2" data-testid="tab-orders">
               <LayoutGrid className="h-4 w-4" />
               Pedidos {orders.length > 0 && `(${orders.length})`}
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center gap-2" data-testid="tab-reports">
+              <BarChart3 className="h-4 w-4" />
+              Relatórios
             </TabsTrigger>
             <TabsTrigger value="map" className="flex items-center gap-2" data-testid="tab-map">
               <Map className="h-4 w-4" />
@@ -184,10 +213,18 @@ export default function OrderDashboard() {
               <OrderStatistics orders={orders} />
             )}
 
-            <FilterBar
-              onFilterChange={handleFilterChange}
-              totalOrders={filteredOrders.length}
-            />
+            {/* Filters Section */}
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <ResponsavelFilter
+                orders={orders}
+                selectedResponsavel={selectedResponsavel}
+                onResponsavelChange={handleResponsavelChange}
+              />
+              <FilterBar
+                onFilterChange={handleFilterChange}
+                totalOrders={filteredOrders.length}
+              />
+            </div>
 
             {/* Loading State */}
             {isLoading && (
@@ -259,6 +296,11 @@ export default function OrderDashboard() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          {/* Reports Tab */}
+          <TabsContent value="reports" className="space-y-6">
+            <Reports orders={orders} />
           </TabsContent>
 
           {/* Map Tab */}

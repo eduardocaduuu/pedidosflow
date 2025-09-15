@@ -12,33 +12,20 @@ export default function OrderStatistics({ orders }: OrderStatisticsProps) {
   const totalOrders = orders.length;
   const totalValue = orders.reduce((sum, order) => sum + parseFloat(order.valorPedido), 0);
 
-  // Debug: Log all unique delivery types
-  const uniqueDeliveryTypes = [...new Set(orders.map(order => order.tipoEntrega))];
-  console.log('Unique delivery types found:', uniqueDeliveryTypes);
-  uniqueDeliveryTypes.forEach((type, index) => {
-    console.log(`Type ${index + 1}: "${type}"`);
-  });
-
   const homeDeliveries = orders.filter(order => {
     const tipoEntrega = order.tipoEntrega.toLowerCase().trim();
-    const isHomeDelivery = tipoEntrega.includes("no endereço da entrega") ||
+    return tipoEntrega.includes("no endereço da entrega") ||
            tipoEntrega.includes("no endereco da entrega") ||
            tipoEntrega.includes("endereço da entrega") ||
            tipoEntrega.includes("endereco da entrega") ||
            tipoEntrega.includes("endereço de entrega") ||
            tipoEntrega.includes("endereco de entrega") ||
-           !tipoEntrega.includes("retirar") && !tipoEntrega.includes("central");
-
-    if (isHomeDelivery) {
-      console.log('Home delivery found:', order.tipoEntrega);
-    }
-
-    return isHomeDelivery;
+           (!tipoEntrega.includes("retirar") && !tipoEntrega.includes("central"));
   }).length;
 
   const storePickups = orders.filter(order => {
     const tipoEntrega = order.tipoEntrega.toLowerCase().trim();
-    const isStorePickup = tipoEntrega.includes("retirar na central de serviço") ||
+    return tipoEntrega.includes("retirar na central de serviço") ||
            tipoEntrega.includes("retirar na central de servico") ||
            tipoEntrega.includes("retirar na central de serviços") ||
            tipoEntrega.includes("retirar na central de servicos") ||
@@ -46,12 +33,6 @@ export default function OrderStatistics({ orders }: OrderStatisticsProps) {
            tipoEntrega.includes("central de servico") ||
            tipoEntrega.includes("central de serviços") ||
            tipoEntrega.includes("central de servicos");
-
-    if (isStorePickup) {
-      console.log('Store pickup found:', order.tipoEntrega);
-    }
-
-    return isStorePickup;
   }).length;
 
   const paidOrders = orders.filter(order => {

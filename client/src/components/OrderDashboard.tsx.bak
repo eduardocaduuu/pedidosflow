@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutGrid, Upload, Filter, Map, Moon, Sun, Loader2 } from "lucide-react";
+import { LayoutGrid, Upload, Filter, Map, Moon, Sun } from "lucide-react";
 import OrderCard from "./OrderCard";
 import FileUpload from "./FileUpload";
 import FilterBar, { type FilterOptions } from "./FilterBar";
@@ -14,41 +14,105 @@ export default function OrderDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Load orders from API
-  const loadOrders = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await fetch('/api/orders');
-      if (!response.ok) {
-        throw new Error('Failed to fetch orders');
-      }
-      const ordersData = await response.json();
-
-      // Convert date strings back to Date objects
-      const processedOrders = ordersData.map((order: any) => ({
-        ...order,
-        dataAprovacao: order.dataAprovacao ? new Date(order.dataAprovacao) : undefined,
-        previsaoEntrega: order.previsaoEntrega ? new Date(order.previsaoEntrega) : undefined
-      }));
-
-      setOrders(processedOrders);
-      setFilteredOrders(processedOrders);
-    } catch (error) {
-      console.error('Error loading orders:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load orders');
-    } finally {
-      setIsLoading(false);
+  // TODO: Remove mock functionality - replace with real data from backend
+  const mockOrders: Order[] = [
+    {
+      id: "1",
+      codigoPedido: "PED001",
+      situacaoFiscal: "Faturado",
+      pessoa: "12345",
+      nomePessoa: "João Silva Santos",
+      papel: "Cliente Premium",
+      qtdeItens: 15,
+      valorPedido: "2450.75",
+      tipoEntrega: "No endereço da entrega",
+      situacaoComercial: "Aprovado",
+      dataAprovacao: new Date("2024-01-15T14:30:00"),
+      previsaoEntrega: new Date("2024-01-22T00:00:00"),
+      cicloCaptacao: "13/2024",
+      diaCiclo: 5,
+      planoPagamento: "BOLETO Pago via Pix",
+      logradouro: "Rua das Flores, 123",
+      complemento: "Apto 45",
+      bairro: "Vila Madalena",
+      cidade: "São Paulo",
+      uf: "SP",
+      cep: "05434-000",
+      referencia: "Próximo ao shopping",
+      bairroEntregaRetirada: null,
+      cidadeEntregaRetirada: null,
+      referenciaEntregaRetirada: null,
+      telefone: "(11) 99999-8888",
+      responsavelEstrutura: "Maria Costa",
+      usuarioFinalizacao: "Carlos Santos"
+    },
+    {
+      id: "2",
+      codigoPedido: "PED002",
+      situacaoFiscal: "Não Faturado",
+      pessoa: "67890",
+      nomePessoa: "Ana Paula Oliveira",
+      papel: "Cliente Regular",
+      qtdeItens: 8,
+      valorPedido: "890.50",
+      tipoEntrega: "Retirar na central de serviço",
+      situacaoComercial: "Pendente",
+      dataAprovacao: null,
+      previsaoEntrega: new Date("2024-01-25T00:00:00"),
+      cicloCaptacao: "14/2024",
+      diaCiclo: 2,
+      planoPagamento: "Parcelado Pendente",
+      logradouro: "Av. Paulista, 1000",
+      complemento: "Sala 502",
+      bairro: "Bela Vista",
+      cidade: "São Paulo",
+      uf: "SP",
+      cep: "01310-100",
+      referencia: "Edifício comercial",
+      bairroEntregaRetirada: "Centro",
+      cidadeEntregaRetirada: "São Paulo",
+      referenciaEntregaRetirada: "Loja matriz - Rua do Comércio",
+      telefone: "(11) 88888-7777",
+      responsavelEstrutura: "Pedro Lima",
+      usuarioFinalizacao: null
+    },
+    {
+      id: "3",
+      codigoPedido: "PED003",
+      situacaoFiscal: "Faturado",
+      pessoa: "11111",
+      nomePessoa: "Roberto Carlos da Silva",
+      papel: "Cliente VIP",
+      qtdeItens: 25,
+      valorPedido: "5670.80",
+      tipoEntrega: "No endereço da entrega",
+      situacaoComercial: "Aprovado",
+      dataAprovacao: new Date("2024-01-10T09:15:00"),
+      previsaoEntrega: new Date("2024-01-20T00:00:00"),
+      cicloCaptacao: "13/2024",
+      diaCiclo: 8,
+      planoPagamento: "Cartão de Crédito ON-LINE",
+      logradouro: "Rua Augusta, 500",
+      complemento: null,
+      bairro: "Consolação",
+      cidade: "São Paulo",
+      uf: "SP",
+      cep: "01305-000",
+      referencia: "Próximo ao metrô",
+      bairroEntregaRetirada: null,
+      cidadeEntregaRetirada: null,
+      referenciaEntregaRetirada: null,
+      telefone: "(11) 77777-6666",
+      responsavelEstrutura: "Laura Mendes",
+      usuarioFinalizacao: "Ana Silva"
     }
-  };
+  ];
 
-  // Load orders on component mount
-  useEffect(() => {
-    loadOrders();
-  }, []);
+  useState(() => {
+    setOrders(mockOrders);
+    setFilteredOrders(mockOrders);
+  });
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -56,9 +120,11 @@ export default function OrderDashboard() {
     console.log('Dark mode toggled:', !darkMode);
   };
 
-  const handleFileProcessed = async () => {
-    console.log('File processed, refreshing orders list');
-    await loadOrders();
+  const handleFileProcessed = (processedOrders: any[]) => {
+    // TODO: Remove mock functionality - integrate with backend API
+    console.log('File processed, orders received:', processedOrders);
+    setOrders([...orders, ...processedOrders]);
+    setFilteredOrders([...orders, ...processedOrders]);
     setActiveTab("orders");
   };
 
@@ -66,7 +132,7 @@ export default function OrderDashboard() {
     let filtered = [...orders];
 
     if (filters.search) {
-      filtered = filtered.filter(order =>
+      filtered = filtered.filter(order => 
         order.codigoPedido.toLowerCase().includes(filters.search.toLowerCase()) ||
         order.nomePessoa.toLowerCase().includes(filters.search.toLowerCase()) ||
         order.responsavelEstrutura?.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -118,13 +184,13 @@ export default function OrderDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-chart-3/10 relative">
       {/* Glass background overlay */}
       <div className="fixed inset-0 backdrop-blur-xs bg-gradient-to-br from-white/20 via-transparent to-primary/5 dark:from-background/20 dark:to-primary/10 pointer-events-none" />
-
+      
       {/* Header */}
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-card/70 dark:bg-card/60 border-b border-border/30 shadow-2xl">
         <div className="container mx-auto px-6 py-4 relative">
           {/* Glass reflection effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent dark:via-white/5 pointer-events-none" />
-
+          
           <div className="flex items-center justify-between relative z-10">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-chart-3 to-chart-1 bg-clip-text text-transparent tracking-tight" data-testid="text-app-title">
@@ -163,7 +229,7 @@ export default function OrderDashboard() {
             </TabsTrigger>
             <TabsTrigger value="orders" className="flex items-center gap-2" data-testid="tab-orders">
               <LayoutGrid className="h-4 w-4" />
-              Pedidos {orders.length > 0 && `(${orders.length})`}
+              Pedidos
             </TabsTrigger>
             <TabsTrigger value="map" className="flex items-center gap-2" data-testid="tab-map">
               <Map className="h-4 w-4" />
@@ -178,49 +244,22 @@ export default function OrderDashboard() {
 
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
-            <FilterBar
-              onFilterChange={handleFilterChange}
+            <FilterBar 
+              onFilterChange={handleFilterChange} 
               totalOrders={filteredOrders.length}
             />
-
-            {/* Loading State */}
-            {isLoading && (
-              <div className="text-center py-12 space-y-4">
-                <Loader2 className="h-16 w-16 mx-auto text-muted-foreground animate-spin" />
-                <div>
-                  <h3 className="text-lg font-semibold">Carregando pedidos...</h3>
-                  <p className="text-muted-foreground">
-                    Aguarde enquanto buscamos os dados.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Error State */}
-            {error && (
-              <div className="text-center py-12 space-y-4">
-                <div className="text-destructive">
-                  <h3 className="text-lg font-semibold">Erro ao carregar pedidos</h3>
-                  <p className="text-muted-foreground">{error}</p>
-                </div>
-                <Button variant="outline" onClick={loadOrders}>
-                  Tentar Novamente
-                </Button>
-              </div>
-            )}
-
-            {/* Empty State */}
-            {!isLoading && !error && filteredOrders.length === 0 && orders.length === 0 && (
+            
+            {filteredOrders.length === 0 ? (
               <div className="text-center py-12 space-y-4">
                 <LayoutGrid className="h-16 w-16 mx-auto text-muted-foreground" />
                 <div>
                   <h3 className="text-lg font-semibold">Nenhum pedido encontrado</h3>
                   <p className="text-muted-foreground">
-                    Importe uma planilha Excel para começar a gerenciar seus pedidos.
+                    Importe uma planilha Excel ou ajuste os filtros para ver os pedidos.
                   </p>
                 </div>
-                <Button
-                  variant="outline"
+                <Button 
+                  variant="outline" 
                   onClick={() => setActiveTab("upload")}
                   data-testid="button-go-to-upload"
                 >
@@ -228,23 +267,7 @@ export default function OrderDashboard() {
                   Importar Pedidos
                 </Button>
               </div>
-            )}
-
-            {/* No Results from Filter */}
-            {!isLoading && !error && filteredOrders.length === 0 && orders.length > 0 && (
-              <div className="text-center py-12 space-y-4">
-                <Filter className="h-16 w-16 mx-auto text-muted-foreground" />
-                <div>
-                  <h3 className="text-lg font-semibold">Nenhum resultado encontrado</h3>
-                  <p className="text-muted-foreground">
-                    Ajuste os filtros para encontrar os pedidos que procura.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Orders Grid */}
-            {!isLoading && !error && filteredOrders.length > 0 && (
+            ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredOrders.map((order) => (
                   <div key={order.id} onClick={() => setSelectedOrder(order)}>
@@ -260,8 +283,8 @@ export default function OrderDashboard() {
             {selectedOrder ? (
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
-                  <Button
-                    variant="outline"
+                  <Button 
+                    variant="outline" 
                     onClick={() => setSelectedOrder(null)}
                     data-testid="button-back-to-orders"
                   >
@@ -287,8 +310,8 @@ export default function OrderDashboard() {
                     Clique em um pedido na aba "Pedidos" para visualizar sua localização no mapa.
                   </p>
                 </div>
-                <Button
-                  variant="outline"
+                <Button 
+                  variant="outline" 
                   onClick={() => setActiveTab("orders")}
                   data-testid="button-go-to-orders"
                 >

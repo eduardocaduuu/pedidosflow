@@ -1,55 +1,46 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, decimal } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+export const insertOrderSchema = z.object({
+  codigoPedido: z.string(),
+  situacaoFiscal: z.string(),
+  pessoa: z.string(),
+  nomePessoa: z.string(),
+  papel: z.string(),
+  qtdeItens: z.number(),
+  valorPedido: z.string(),
+  tipoEntrega: z.string(),
+  situacaoComercial: z.string(),
+  dataAprovacao: z.date().optional(),
+  previsaoEntrega: z.date().optional(),
+  cicloCaptacao: z.string(),
+  diaCiclo: z.number(),
+  planoPagamento: z.string(),
+  logradouro: z.string().optional(),
+  complemento: z.string().optional(),
+  bairro: z.string().optional(),
+  cidade: z.string().optional(),
+  uf: z.string().optional(),
+  cep: z.string().optional(),
+  referencia: z.string().optional(),
+  bairroEntregaRetirada: z.string().optional(),
+  cidadeEntregaRetirada: z.string().optional(),
+  referenciaEntregaRetirada: z.string().optional(),
+  telefone: z.string().optional(),
+  responsavelEstrutura: z.string().optional(),
+  usuarioFinalizacao: z.string().optional(),
 });
 
-export const orders = pgTable("orders", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  codigoPedido: text("codigo_pedido").notNull().unique(),
-  situacaoFiscal: text("situacao_fiscal").notNull(),
-  pessoa: text("pessoa").notNull(),
-  nomePessoa: text("nome_pessoa").notNull(),
-  papel: text("papel").notNull(),
-  qtdeItens: integer("qtde_itens").notNull(),
-  valorPedido: decimal("valor_pedido", { precision: 10, scale: 2 }).notNull(),
-  tipoEntrega: text("tipo_entrega").notNull(),
-  situacaoComercial: text("situacao_comercial").notNull(),
-  dataAprovacao: timestamp("data_aprovacao"),
-  previsaoEntrega: timestamp("previsao_entrega"),
-  cicloCaptacao: text("ciclo_captacao").notNull(),
-  diaCiclo: integer("dia_ciclo").notNull(),
-  planoPagamento: text("plano_pagamento").notNull(),
-  logradouro: text("logradouro"),
-  complemento: text("complemento"),
-  bairro: text("bairro"),
-  cidade: text("cidade"),
-  uf: text("uf"),
-  cep: text("cep"),
-  referencia: text("referencia"),
-  bairroEntregaRetirada: text("bairro_entrega_retirada"),
-  cidadeEntregaRetirada: text("cidade_entrega_retirada"),
-  referenciaEntregaRetirada: text("referencia_entrega_retirada"),
-  telefone: text("telefone"),
-  responsavelEstrutura: text("responsavel_estrutura"),
-  usuarioFinalizacao: text("usuario_finalizacao"),
+export const orderSchema = insertOrderSchema.extend({
+  id: z.string(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
-
-export const insertOrderSchema = createInsertSchema(orders).omit({
-  id: true,
-});
-
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
-export type Order = typeof orders.$inferSelect;
+export type Order = z.infer<typeof orderSchema>;
+
+export type User = {
+  id: string;
+  username: string;
+  password: string;
+};
+
+export type InsertUser = Omit<User, 'id'>;

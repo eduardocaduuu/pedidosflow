@@ -44,3 +44,45 @@ export type User = {
 };
 
 export type InsertUser = Omit<User, 'id'>;
+
+// Business Logic Functions
+export const isPaymentPaid = (planoPagamento: string): boolean => {
+  const paidKeywords = ['BOLETO', 'Pix', 'Cartão de Crédito ON-LINE'];
+  return paidKeywords.some(keyword => planoPagamento.includes(keyword));
+};
+
+export const getDeliveryType = (tipoEntrega: string): 'store_pickup' | 'home_delivery' => {
+  return tipoEntrega.includes('Retirar na central de serviço') ? 'store_pickup' : 'home_delivery';
+};
+
+export const getValueRanking = (valor: string): { level: string; color: string; priority: number } => {
+  const numValue = parseFloat(valor);
+  if (numValue > 5000) return { level: "Premium", color: "bg-chart-1", priority: 4 };
+  if (numValue > 2000) return { level: "Alto", color: "bg-chart-3", priority: 3 };
+  if (numValue > 500) return { level: "Médio", color: "bg-chart-2", priority: 2 };
+  return { level: "Básico", color: "bg-muted", priority: 1 };
+};
+
+export const getQuantityRanking = (qtde: number): { level: string; priority: number } => {
+  if (qtde > 20) return { level: "Alta", priority: 3 };
+  if (qtde > 10) return { level: "Média", priority: 2 };
+  return { level: "Baixa", priority: 1 };
+};
+
+export const getCycleDisplay = (cicloCaptacao: string): string => {
+  return cicloCaptacao.substring(0, 2);
+};
+
+export const getPersonValueRanking = (papel: string): { level: string; color: string } => {
+  const lowerPapel = papel.toLowerCase();
+  if (lowerPapel.includes('premium') || lowerPapel.includes('vip')) {
+    return { level: "Cliente Premium", color: "bg-chart-1" };
+  }
+  if (lowerPapel.includes('especial') || lowerPapel.includes('gold')) {
+    return { level: "Cliente Especial", color: "bg-chart-3" };
+  }
+  if (lowerPapel.includes('regular') || lowerPapel.includes('padrão')) {
+    return { level: "Cliente Regular", color: "bg-chart-2" };
+  }
+  return { level: "Cliente", color: "bg-muted" };
+};

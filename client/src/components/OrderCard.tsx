@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, User, Package, Calendar, MapPin, CreditCard, Users, Phone } from "lucide-react";
+import { ChevronDown, User, Package, Calendar, MapPin, CreditCard, Users, Phone, Star } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import StatusBadge from "./StatusBadge";
@@ -16,26 +16,41 @@ interface OrderCardProps {
 export default function OrderCard({ order }: OrderCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const getValueRanking = (value: number) => {
-    if (value > 5000) return { level: "Premium", color: "bg-chart-1" };
-    if (value > 2000) return { level: "Alto", color: "bg-chart-3" };
-    if (value > 500) return { level: "Médio", color: "bg-chart-2" };
-    return { level: "Básico", color: "bg-muted" };
+  // Business Logic Functions
+  const getValueRanking = (value: string) => {
+    const numValue = parseFloat(value);
+    if (numValue > 5000) return { level: "Premium", color: "bg-chart-1", priority: 4 };
+    if (numValue > 2000) return { level: "Alto", color: "bg-chart-3", priority: 3 };
+    if (numValue > 500) return { level: "Médio", color: "bg-chart-2", priority: 2 };
+    return { level: "Básico", color: "bg-muted", priority: 1 };
   };
 
   const getQuantityRanking = (qty: number) => {
-    if (qty > 20) return "Alta";
-    if (qty > 10) return "Média";
-    return "Baixa";
+    if (qty > 20) return { level: "Alta", color: "text-chart-1", priority: 3 };
+    if (qty > 10) return { level: "Média", color: "text-chart-3", priority: 2 };
+    return { level: "Baixa", color: "text-muted-foreground", priority: 1 };
   };
 
-  const getCycleNumber = (cycle: string) => {
-    return cycle.substring(0, 2);
+  const getPersonValueRanking = (papel: string) => {
+    const lowerPapel = papel.toLowerCase();
+    if (lowerPapel.includes('premium') || lowerPapel.includes('vip')) {
+      return { level: "Cliente Premium", color: "bg-chart-1", stars: 5 };
+    }
+    if (lowerPapel.includes('especial') || lowerPapel.includes('gold')) {
+      return { level: "Cliente Especial", color: "bg-chart-3", stars: 4 };
+    }
+    if (lowerPapel.includes('regular') || lowerPapel.includes('padrão')) {
+      return { level: "Cliente Regular", color: "bg-chart-2", stars: 3 };
+    }
+    return { level: "Cliente", color: "bg-muted", stars: 2 };
+  };
+
+  const getCycleDisplay = (cicloCaptacao: string) => {
+    return cicloCaptacao.substring(0, 2);
   };
 
   const formatPhoneNumber = (phone: string) => {
     if (!phone) return "Não informado";
-    // Remove caracteres não numéricos
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length === 11) {
       return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 7)}-${cleaned.substring(7)}`;
@@ -46,8 +61,18 @@ export default function OrderCard({ order }: OrderCardProps) {
     return phone;
   };
 
-  const valueRanking = getValueRanking(Number(order.valorPedido));
+  const renderStars = (count: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={`h-3 w-3 ${i < count ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+      />
+    ));
+  };
+
+  const valueRanking = getValueRanking(order.valorPedido);
   const quantityRanking = getQuantityRanking(order.qtdeItens);
+  const personRanking = getPersonValueRanking(order.papel);
 
   return (
     <Card className="backdrop-blur-xl bg-card/60 dark:bg-card/50 border border-border/40 shadow-2xl hover-elevate transition-all duration-500 relative overflow-hidden group h-fit" data-testid={`card-order-${order.codigoPedido}`}>
@@ -69,11 +94,24 @@ export default function OrderCard({ order }: OrderCardProps) {
                 <StatusBadge type="commercial" status={order.situacaoComercial} />
               </div>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <User className="h-4 w-4 flex-shrink-0" />
-              <span className="truncate" data-testid={`text-customer-${order.pessoa}`}>
-                {order.nomePessoa} ({order.pessoa})
-              </span>
+
+            {/* Customer Info with Value Ranking */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate" data-testid={`text-customer-${order.pessoa}`}>
+                  {order.nomePessoa} ({order.pessoa})
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Badge className={`${personRanking.color} text-white text-xs`}>
+                  {personRanking.level}
+                </Badge>
+                <div className="flex items-center gap-1">
+                  {renderStars(personRanking.stars)}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -82,7 +120,7 @@ export default function OrderCard({ order }: OrderCardProps) {
               R$ {Number(order.valorPedido).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
             <Badge className={`${valueRanking.color} text-white text-xs`} data-testid={`badge-value-ranking-${order.codigoPedido}`}>
-              {valueRanking.level}
+              Valor {valueRanking.level}
             </Badge>
           </div>
         </div>
@@ -95,7 +133,9 @@ export default function OrderCard({ order }: OrderCardProps) {
               <div className="text-sm font-medium" data-testid={`text-quantity-${order.codigoPedido}`}>
                 {order.qtdeItens} itens
               </div>
-              <div className="text-xs text-muted-foreground">Qtd. {quantityRanking}</div>
+              <div className={`text-xs font-medium ${quantityRanking.color}`}>
+                Qtde {quantityRanking.level}
+              </div>
             </div>
           </div>
 
@@ -110,7 +150,7 @@ export default function OrderCard({ order }: OrderCardProps) {
           <div className="flex items-center gap-2 p-2 bg-card/30 rounded-lg">
             <div className="text-center min-w-0 flex-1">
               <div className="text-lg font-bold text-primary" data-testid={`text-cycle-${order.codigoPedido}`}>
-                {getCycleNumber(order.cicloCaptacao)}
+                {getCycleDisplay(order.cicloCaptacao)}
               </div>
               <div className="text-xs text-muted-foreground">Ciclo • Dia {order.diaCiclo}</div>
             </div>
@@ -133,6 +173,22 @@ export default function OrderCard({ order }: OrderCardProps) {
           </div>
         </div>
 
+        {/* Data de Aprovação e Previsão sempre visíveis */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 p-3 bg-card/20 rounded-lg">
+          <div>
+            <div className="text-xs text-muted-foreground">Data de Aprovação</div>
+            <div className="text-sm font-medium" data-testid={`text-approval-visible-${order.codigoPedido}`}>
+              {order.dataAprovacao ? format(new Date(order.dataAprovacao), "dd/MM/yyyy", { locale: ptBR }) : "Pendente"}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">Previsão de Entrega</div>
+            <div className="text-sm font-medium" data-testid={`text-delivery-visible-${order.codigoPedido}`}>
+              {order.previsaoEntrega ? format(new Date(order.previsaoEntrega), "dd/MM/yyyy", { locale: ptBR }) : "Não definida"}
+            </div>
+          </div>
+        </div>
+
         {/* Expandable Details */}
         <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
           <CollapsibleTrigger asChild>
@@ -145,51 +201,11 @@ export default function OrderCard({ order }: OrderCardProps) {
           </CollapsibleTrigger>
 
           <CollapsibleContent className="space-y-3 pt-4">
-            {/* Customer Details */}
-            <div className="bg-card/50 rounded-lg p-3 backdrop-blur-sm">
-              <h4 className="flex items-center gap-2 text-sm font-semibold mb-2">
-                <User className="h-4 w-4" />
-                Informações do Cliente
-              </h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex flex-wrap gap-4">
-                  <div className="flex-1 min-w-0">
-                    <span className="text-muted-foreground">Papel:</span>
-                    <span className="ml-2 font-medium block sm:inline" data-testid={`text-role-${order.codigoPedido}`}>
-                      {order.papel}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Dates */}
-            <div className="bg-card/50 rounded-lg p-3 backdrop-blur-sm">
-              <h4 className="flex items-center gap-2 text-sm font-semibold mb-2">
-                <Calendar className="h-4 w-4" />
-                Datas Importantes
-              </h4>
-              <div className="space-y-2 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Aprovação:</span>
-                  <span className="ml-2 font-medium block sm:inline" data-testid={`text-approval-date-${order.codigoPedido}`}>
-                    {order.dataAprovacao ? format(new Date(order.dataAprovacao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : "Pendente"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Previsão Entrega:</span>
-                  <span className="ml-2 font-medium block sm:inline" data-testid={`text-delivery-date-${order.codigoPedido}`}>
-                    {order.previsaoEntrega ? format(new Date(order.previsaoEntrega), "dd/MM/yyyy", { locale: ptBR }) : "Não definida"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Address - Melhor formatação */}
+            {/* Endereço Completo */}
             <div className="bg-card/50 rounded-lg p-3 backdrop-blur-sm">
               <h4 className="flex items-center gap-2 text-sm font-semibold mb-2">
                 <MapPin className="h-4 w-4" />
-                Endereço de Entrega
+                Endereço Completo
               </h4>
               <div className="text-sm space-y-1">
                 {order.logradouro && (
@@ -198,9 +214,7 @@ export default function OrderCard({ order }: OrderCardProps) {
                     {order.complemento && `, ${order.complemento}`}
                   </div>
                 )}
-                {order.bairro && (
-                  <div>{order.bairro}</div>
-                )}
+                {order.bairro && <div>{order.bairro}</div>}
                 <div className="text-muted-foreground">
                   {order.cidade} - {order.uf}
                   {order.cep && ` • CEP: ${order.cep}`}
@@ -211,10 +225,11 @@ export default function OrderCard({ order }: OrderCardProps) {
                   </div>
                 )}
 
+                {/* Local específico de entrega/retirada */}
                 {(order.bairroEntregaRetirada || order.cidadeEntregaRetirada) && (
                   <div className="pt-2 mt-2 border-t border-border/50">
                     <div className="text-xs font-medium text-muted-foreground mb-1">
-                      Local específico de entrega/retirada:
+                      Local específico:
                     </div>
                     <div className="font-medium">
                       {order.bairroEntregaRetirada}, {order.cidadeEntregaRetirada}
@@ -229,39 +244,67 @@ export default function OrderCard({ order }: OrderCardProps) {
               </div>
             </div>
 
-            {/* Staff */}
+            {/* Funcionários Responsáveis */}
             <div className="bg-card/50 rounded-lg p-3 backdrop-blur-sm">
               <h4 className="flex items-center gap-2 text-sm font-semibold mb-2">
                 <Users className="h-4 w-4" />
-                Equipe Responsável
+                Funcionários Responsáveis
               </h4>
               <div className="space-y-2 text-sm">
                 <div>
-                  <span className="text-muted-foreground">Estrutura:</span>
+                  <span className="text-muted-foreground">Responsável Estrutura:</span>
                   <span className="ml-2 font-medium block sm:inline" data-testid={`text-staff-structure-${order.codigoPedido}`}>
                     {order.responsavelEstrutura || "Não atribuído"}
                   </span>
+                  <div className="text-xs text-muted-foreground">
+                    Ajudou o cliente a fazer e aprovar o pedido
+                  </div>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Finalização:</span>
+                  <span className="text-muted-foreground">Usuário de Finalização:</span>
                   <span className="ml-2 font-medium block sm:inline" data-testid={`text-staff-finalization-${order.codigoPedido}`}>
                     {order.usuarioFinalizacao || "Não atribuído"}
                   </span>
+                  <div className="text-xs text-muted-foreground">
+                    Ajudou o cliente a finalizar o pedido
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Payment Details */}
+            {/* Detalhes do Pagamento */}
             <div className="bg-card/50 rounded-lg p-3 backdrop-blur-sm">
               <h4 className="flex items-center gap-2 text-sm font-semibold mb-2">
                 <CreditCard className="h-4 w-4" />
                 Detalhes do Pagamento
               </h4>
               <div className="text-sm">
-                <span className="text-muted-foreground">Forma de pagamento:</span>
+                <span className="text-muted-foreground">Plano:</span>
                 <span className="ml-2 font-medium block sm:inline" data-testid={`text-payment-plan-${order.codigoPedido}`}>
                   {order.planoPagamento}
                 </span>
+              </div>
+            </div>
+
+            {/* Datas Detalhadas */}
+            <div className="bg-card/50 rounded-lg p-3 backdrop-blur-sm">
+              <h4 className="flex items-center gap-2 text-sm font-semibold mb-2">
+                <Calendar className="h-4 w-4" />
+                Cronograma Detalhado
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Data e Hora da Aprovação:</span>
+                  <span className="ml-2 font-medium block sm:inline" data-testid={`text-approval-detailed-${order.codigoPedido}`}>
+                    {order.dataAprovacao ? format(new Date(order.dataAprovacao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : "Aguardando aprovação"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Ciclo Completo:</span>
+                  <span className="ml-2 font-medium block sm:inline">
+                    {order.cicloCaptacao} (Dia {order.diaCiclo})
+                  </span>
+                </div>
               </div>
             </div>
           </CollapsibleContent>

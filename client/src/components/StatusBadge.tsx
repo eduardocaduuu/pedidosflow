@@ -11,7 +11,10 @@ export default function StatusBadge({ type, status, className }: StatusBadgeProp
   const getStatusConfig = () => {
     switch (type) {
       case "payment":
-        const isPaid = status.includes("BOLETO") || status.includes("Pix") || status.includes("Cartão de Crédito ON-LINE");
+        // Business rule: BOLETO, Pix ou Cartão de Crédito ON-LINE = já foi pago
+        const isPaid = status.includes("BOLETO") ||
+                      status.includes("Pix") ||
+                      status.includes("Cartão de Crédito ON-LINE");
         if (isPaid) {
           return {
             variant: "default" as const,
@@ -62,11 +65,21 @@ export default function StatusBadge({ type, status, className }: StatusBadgeProp
         };
 
       case "delivery":
-        const isStorePickup = status.includes("Retirar na central");
+        // Business rule: "Retirar na central de serviço" = buscar na loja
+        // "No endereço da entrega" = entrega em casa (pagou frete)
+        const isStorePickup = status.includes("Retirar na central de serviço");
+        if (isStorePickup) {
+          return {
+            variant: "outline" as const,
+            icon: Store,
+            label: "Buscar na Loja",
+            className: "border-chart-3 text-chart-3 bg-chart-3/5 shrink-0"
+          };
+        }
         return {
           variant: "outline" as const,
-          icon: isStorePickup ? Store : Home,
-          label: isStorePickup ? "Retirada" : "Entrega",
+          icon: Home,
+          label: "Entrega em Casa",
           className: "border-primary text-primary bg-primary/5 shrink-0"
         };
 

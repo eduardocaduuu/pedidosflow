@@ -12,13 +12,21 @@ export default function OrderStatistics({ orders }: OrderStatisticsProps) {
   const totalOrders = orders.length;
   const totalValue = orders.reduce((sum, order) => sum + parseFloat(order.valorPedido), 0);
 
-  const homeDeliveries = orders.filter(order =>
-    order.tipoEntrega.includes("No endereço da entrega")
-  ).length;
+  const homeDeliveries = orders.filter(order => {
+    const tipoEntrega = order.tipoEntrega.toLowerCase().trim();
+    return tipoEntrega.includes("no endereço da entrega") ||
+           tipoEntrega.includes("no endereco da entrega") ||
+           tipoEntrega.includes("endereço da entrega") ||
+           tipoEntrega.includes("endereco da entrega");
+  }).length;
 
-  const storePickups = orders.filter(order =>
-    order.tipoEntrega.includes("Retirar na central de serviço")
-  ).length;
+  const storePickups = orders.filter(order => {
+    const tipoEntrega = order.tipoEntrega.toLowerCase().trim();
+    return tipoEntrega.includes("retirar na central de serviço") ||
+           tipoEntrega.includes("retirar na central de servico") ||
+           tipoEntrega.includes("central de serviço") ||
+           tipoEntrega.includes("central de servico");
+  }).length;
 
   const paidOrders = orders.filter(order => {
     const isPaid = order.planoPagamento.includes("BOLETO") ||

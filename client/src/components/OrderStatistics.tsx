@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package, DollarSign, Home, Store, TrendingUp } from "lucide-react";
+import { Package, DollarSign, Home, Store, TrendingUp, XCircle } from "lucide-react";
 import type { Order } from "@shared/schema";
 
 interface OrderStatisticsProps {
@@ -11,6 +11,15 @@ export default function OrderStatistics({ orders }: OrderStatisticsProps) {
   // Calculate statistics
   const totalOrders = orders.length;
   const totalValue = orders.reduce((sum, order) => sum + parseFloat(order.valorPedido), 0);
+
+  // Calculate canceled orders and their values
+  const canceledOrders = orders.filter(order =>
+    order.situacaoComercial.toLowerCase().includes("cancelado")
+  );
+  const canceledValue = canceledOrders.reduce((sum, order) => sum + parseFloat(order.valorPedido), 0);
+
+  // Calculate real value (total - canceled)
+  const realValue = totalValue - canceledValue;
 
   const homeDeliveries = orders.filter(order => {
     const tipoEntrega = order.tipoEntrega.toLowerCase().trim();
@@ -59,21 +68,12 @@ export default function OrderStatistics({ orders }: OrderStatisticsProps) {
 
       <CardContent className="space-y-4 relative z-10">
         {/* Main Statistics Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Total Orders */}
           <div className="bg-card/30 rounded-lg p-3 text-center">
             <Package className="h-6 w-6 mx-auto mb-2 text-primary" />
             <div className="text-2xl font-bold text-foreground">{totalOrders}</div>
             <div className="text-xs text-muted-foreground">Pedidos Importados</div>
-          </div>
-
-          {/* Total Value */}
-          <div className="bg-card/30 rounded-lg p-3 text-center">
-            <DollarSign className="h-6 w-6 mx-auto mb-2 text-chart-1" />
-            <div className="text-xl font-bold text-foreground">
-              R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </div>
-            <div className="text-xs text-muted-foreground">Valor Total</div>
           </div>
 
           {/* Home Deliveries */}
@@ -90,6 +90,39 @@ export default function OrderStatistics({ orders }: OrderStatisticsProps) {
             <div className="text-2xl font-bold text-foreground">{storePickups}</div>
             <div className="text-xs text-muted-foreground">Retiradas na Loja</div>
             <div className="text-xs text-muted-foreground">(Cliente busca)</div>
+          </div>
+        </div>
+
+        {/* Financial Statistics Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Total Value */}
+          <div className="bg-gradient-to-br from-chart-1/10 to-chart-1/5 rounded-lg p-3 text-center border border-chart-1/20">
+            <DollarSign className="h-6 w-6 mx-auto mb-2 text-chart-1" />
+            <div className="text-xl font-bold text-foreground">
+              R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </div>
+            <div className="text-xs text-muted-foreground">Valor Total Bruto</div>
+            <div className="text-xs text-muted-foreground">Todos os pedidos</div>
+          </div>
+
+          {/* Canceled Value */}
+          <div className="bg-gradient-to-br from-red-100/50 to-red-50/30 rounded-lg p-3 text-center border border-red-200/50">
+            <XCircle className="h-6 w-6 mx-auto mb-2 text-red-600" />
+            <div className="text-xl font-bold text-red-700">
+              R$ {canceledValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </div>
+            <div className="text-xs text-muted-foreground">Valor Cancelado</div>
+            <div className="text-xs text-red-600">{canceledOrders.length} pedidos cancelados</div>
+          </div>
+
+          {/* Real Value */}
+          <div className="bg-gradient-to-br from-green-100/50 to-green-50/30 rounded-lg p-3 text-center border border-green-200/50">
+            <TrendingUp className="h-6 w-6 mx-auto mb-2 text-green-600" />
+            <div className="text-xl font-bold text-green-700">
+              R$ {realValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </div>
+            <div className="text-xs text-muted-foreground">Valor Real</div>
+            <div className="text-xs text-green-600">Total - Cancelados</div>
           </div>
         </div>
 

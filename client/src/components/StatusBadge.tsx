@@ -6,16 +6,55 @@ interface StatusBadgeProps {
   status: string;
   className?: string;
   deliveryType?: string; // For enhanced payment logic
+  fiscalStatus?: string; // For payment logic based on NF Emitida
+  commercialStatus?: string; // For payment logic based on commercial status
 }
 
-export default function StatusBadge({ type, status, className, deliveryType }: StatusBadgeProps) {
+export default function StatusBadge({ type, status, className, deliveryType, fiscalStatus, commercialStatus }: StatusBadgeProps) {
   const getStatusConfig = () => {
     switch (type) {
       case "payment":
-        // Business rule:
-        // 1. BOLETO, Pix ou Cartão de Crédito ON-LINE = já foi pago
-        // 2. Se é entrega em casa, o cliente pagou o frete, então está pago
-        const isHomeDelivery = deliveryType ? (() => {
+        // Enhanced Business Rules:
+        // 1. If commercial status is "Cancelado", no payment status should exist
+        // 2. If fiscal status is "NF Emitida", order is paid
+        // 3. BOLETO, Pix ou Cartão de Crédito ON-LINE = já foi pago
+        // 4. Home delivery only counts as paid for Aprovado, Entregue, Transporte status
+
+        const commercialLower = commercialStatus?.toLowerCase().trim() || "";
+        const fiscalLower = fiscalStatus?.toLowerCase().trim() || "";
+
+        // Rule 1: Canceled orders have no payment status
+        if (commercialLower.includes("cancelado")) {
+          return {
+            variant: "secondary" as const,
+            icon: XCircle,
+            label: "Cancelado",
+            className: "bg-gray-500 text-white shrink-0"
+          };
+        }
+
+        // Rule 2: NF Emitida = Paid
+        const isNFEmitida = fiscalLower.includes("nf emitida") || fiscalLower.includes("nota fiscal emitida");
+        if (isNFEmitida) {
+          return {
+            variant: "default" as const,
+            icon: CheckCircle,
+            label: "Pago",
+            className: "bg-green-600 text-white shrink-0"
+          };
+        }
+
+        // Rule 3: Payment methods
+        const hasPaymentMethod = status.includes("BOLETO") ||
+                               status.includes("Pix") ||
+                               status.includes("Cartão de Crédito ON-LINE");
+
+        // Rule 4: Home delivery logic with commercial status restriction
+        const isValidCommercialStatus = commercialLower.includes("aprovado") ||
+                                      commercialLower.includes("entregue") ||
+                                      commercialLower.includes("transporte");
+
+        const isHomeDelivery = deliveryType && isValidCommercialStatus ? (() => {
           const tipoEntrega = deliveryType.toLowerCase().trim();
           return tipoEntrega.includes("no endereço da entrega") ||
                  tipoEntrega.includes("no endereco da entrega") ||
@@ -25,10 +64,6 @@ export default function StatusBadge({ type, status, className, deliveryType }: S
                  tipoEntrega.includes("endereco de entrega") ||
                  (!tipoEntrega.includes("retirar") && !tipoEntrega.includes("central"));
         })() : false;
-
-        const hasPaymentMethod = status.includes("BOLETO") ||
-                               status.includes("Pix") ||
-                               status.includes("Cartão de Crédito ON-LINE");
 
         const isPaid = hasPaymentMethod || isHomeDelivery;
 
@@ -40,6 +75,7 @@ export default function StatusBadge({ type, status, className, deliveryType }: S
             className: "bg-chart-1 text-white shrink-0"
           };
         }
+
         return {
           variant: "secondary" as const,
           icon: Clock,

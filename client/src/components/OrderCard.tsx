@@ -114,7 +114,13 @@ export default function OrderCard({ order }: OrderCardProps) {
           </div>
 
           <div className="flex items-center justify-center p-2 bg-card/30 rounded-lg">
-            <StatusBadge type="payment" status={order.planoPagamento} deliveryType={order.tipoEntrega} />
+            <StatusBadge
+              type="payment"
+              status={order.planoPagamento}
+              deliveryType={order.tipoEntrega}
+              fiscalStatus={order.situacaoFiscal}
+              commercialStatus={order.situacaoComercial}
+            />
           </div>
 
           <div className="flex items-center justify-center p-2 bg-card/30 rounded-lg">

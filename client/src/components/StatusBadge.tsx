@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, AlertTriangle, XCircle, Home, Store } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, XCircle, Home, Store, Truck, Package, CircleCheck } from "lucide-react";
 
 interface StatusBadgeProps {
   type: "payment" | "fiscal" | "commercial" | "delivery";
@@ -48,8 +48,9 @@ export default function StatusBadge({ type, status, className, deliveryType }: S
         };
 
       case "fiscal":
-        // Fix: Check specifically for "NAO FATURADO" vs "FATURADO"
         const statusLower = status.toLowerCase().trim();
+
+        // Check for "Não faturado" status
         const isNotBilled = statusLower.includes("nao faturado") ||
                            statusLower.includes("não faturado") ||
                            statusLower === "nao faturado" ||
@@ -64,7 +65,21 @@ export default function StatusBadge({ type, status, className, deliveryType }: S
           };
         }
 
-        // Only consider "FATURADO" (without NAO/NÃO) as billed
+        // Check for "NF Emitida" - means invoice issued and money in cash
+        const isInvoiceIssued = statusLower.includes("nf emitida") ||
+                              statusLower.includes("nota fiscal emitida") ||
+                              statusLower === "nf emitida";
+
+        if (isInvoiceIssued) {
+          return {
+            variant: "default" as const,
+            icon: CheckCircle,
+            label: "NF Emitida",
+            className: "bg-green-600 text-white shrink-0"
+          };
+        }
+
+        // Check for regular "FATURADO" (without NAO/NÃO)
         if (statusLower === "faturado") {
           return {
             variant: "default" as const,
@@ -83,8 +98,40 @@ export default function StatusBadge({ type, status, className, deliveryType }: S
         };
 
       case "commercial":
-        const isApproved = status.toLowerCase().includes("aprovado");
-        if (isApproved) {
+        const statusCommercial = status.toLowerCase().trim();
+
+        // Transporte - order waiting for pickup by customer
+        if (statusCommercial.includes("transporte")) {
+          return {
+            variant: "secondary" as const,
+            icon: Truck,
+            label: "Transporte",
+            className: "bg-blue-600 text-white shrink-0"
+          };
+        }
+
+        // Cancelado - order was cancelled
+        if (statusCommercial.includes("cancelado")) {
+          return {
+            variant: "destructive" as const,
+            icon: XCircle,
+            label: "Cancelado",
+            className: "bg-red-600 text-white shrink-0"
+          };
+        }
+
+        // Entregue - customer already received order
+        if (statusCommercial.includes("entregue")) {
+          return {
+            variant: "default" as const,
+            icon: CircleCheck,
+            label: "Entregue",
+            className: "bg-green-600 text-white shrink-0"
+          };
+        }
+
+        // Aprovado - order approved, waiting for separation and billing
+        if (statusCommercial.includes("aprovado")) {
           return {
             variant: "default" as const,
             icon: CheckCircle,
@@ -92,11 +139,23 @@ export default function StatusBadge({ type, status, className, deliveryType }: S
             className: "bg-chart-1 text-white shrink-0"
           };
         }
+
+        // Captacao - order in capture phase
+        if (statusCommercial.includes("captacao") || statusCommercial.includes("captação")) {
+          return {
+            variant: "secondary" as const,
+            icon: Package,
+            label: "Captação",
+            className: "bg-orange-600 text-white shrink-0"
+          };
+        }
+
+        // Default case for any other status
         return {
-          variant: "destructive" as const,
-          icon: XCircle,
-          label: "Pendente",
-          className: "bg-destructive text-white shrink-0"
+          variant: "secondary" as const,
+          icon: Clock,
+          label: status,
+          className: "bg-gray-600 text-white shrink-0"
         };
 
       case "delivery":

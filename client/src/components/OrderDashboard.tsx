@@ -94,11 +94,16 @@ export default function OrderDashboard() {
 
     if (filterOptions?.situacaoFiscal && filterOptions.situacaoFiscal !== "todos") {
       filtered = filtered.filter(order => {
+        const statusLower = order.situacaoFiscal.toLowerCase().trim();
+
+        if (filterOptions.situacaoFiscal === "nf-emitida") {
+          return statusLower.includes("nf emitida") || statusLower.includes("nota fiscal emitida");
+        }
         if (filterOptions.situacaoFiscal === "faturado") {
-          return order.situacaoFiscal.toLowerCase().includes("faturado");
+          return statusLower === "faturado";
         }
         if (filterOptions.situacaoFiscal === "nao-faturado") {
-          return !order.situacaoFiscal.toLowerCase().includes("faturado");
+          return statusLower.includes("nao faturado") || statusLower.includes("não faturado");
         }
         return true;
       });
@@ -106,11 +111,22 @@ export default function OrderDashboard() {
 
     if (filterOptions?.situacaoComercial && filterOptions.situacaoComercial !== "todos") {
       filtered = filtered.filter(order => {
-        if (filterOptions.situacaoComercial === "aprovado") {
-          return order.situacaoComercial.toLowerCase().includes("aprovado");
+        const statusCommercial = order.situacaoComercial.toLowerCase().trim();
+
+        if (filterOptions.situacaoComercial === "transporte") {
+          return statusCommercial.includes("transporte");
         }
-        if (filterOptions.situacaoComercial === "pendente") {
-          return !order.situacaoComercial.toLowerCase().includes("aprovado");
+        if (filterOptions.situacaoComercial === "cancelado") {
+          return statusCommercial.includes("cancelado");
+        }
+        if (filterOptions.situacaoComercial === "entregue") {
+          return statusCommercial.includes("entregue");
+        }
+        if (filterOptions.situacaoComercial === "aprovado") {
+          return statusCommercial.includes("aprovado");
+        }
+        if (filterOptions.situacaoComercial === "captacao") {
+          return statusCommercial.includes("captacao") || statusCommercial.includes("captação");
         }
         return true;
       });

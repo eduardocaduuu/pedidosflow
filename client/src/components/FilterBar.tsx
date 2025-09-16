@@ -116,8 +116,8 @@ export default function FilterBar({ onFilterChange, totalOrders = 0 }: FilterBar
 
           {/* Quick Filters */}
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <Select 
-              value={filters.situacaoFiscal} 
+            <Select
+              value={filters.situacaoFiscal}
               onValueChange={(value) => updateFilter('situacaoFiscal', value)}
             >
               <SelectTrigger data-testid="select-fiscal-status">
@@ -125,13 +125,14 @@ export default function FilterBar({ onFilterChange, totalOrders = 0 }: FilterBar
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="nf-emitida">NF Emitida</SelectItem>
                 <SelectItem value="faturado">Faturado</SelectItem>
                 <SelectItem value="nao-faturado">Não Faturado</SelectItem>
               </SelectContent>
             </Select>
 
-            <Select 
-              value={filters.situacaoComercial} 
+            <Select
+              value={filters.situacaoComercial}
               onValueChange={(value) => updateFilter('situacaoComercial', value)}
             >
               <SelectTrigger data-testid="select-commercial-status">
@@ -139,8 +140,11 @@ export default function FilterBar({ onFilterChange, totalOrders = 0 }: FilterBar
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="transporte">Transporte</SelectItem>
+                <SelectItem value="cancelado">Cancelado</SelectItem>
+                <SelectItem value="entregue">Entregue</SelectItem>
                 <SelectItem value="aprovado">Aprovado</SelectItem>
-                <SelectItem value="pendente">Pendente</SelectItem>
+                <SelectItem value="captacao">Captação</SelectItem>
               </SelectContent>
             </Select>
 

@@ -108,15 +108,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "The Excel file is empty or has no data." });
       }
 
-      // Debug: Show available columns
-      if (jsonData.length > 0) {
-        console.log('Available Excel columns:', Object.keys(jsonData[0]));
-        const userColumns = Object.keys(jsonData[0]).filter(col =>
-          col.toLowerCase().includes('usuario') ||
-          col.toLowerCase().includes('finaliz')
-        );
-        console.log('User/Finalizacao related columns found:', userColumns);
-      }
 
       // Map Excel columns to our schema
       const orders: InsertOrder[] = [];
@@ -158,6 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             telefone: safeString(row['Telefone']),
             responsavelEstrutura: safeString(row['Responsável Estrutura']),
             usuarioFinalizacao: safeString(
+              row['Usuario de Finalização'] ||  // Exact match from Excel
               row['Usuário de Finalização'] ||
               row['Usuario de Finalizacao'] ||
               row['Usuario Finalizacao'] ||

@@ -9,6 +9,9 @@ import {
   Target,
   Clock,
   Award,
+  XCircle,
+  Truck,
+  Package,
   BarChart as BarChartIcon
 } from "lucide-react";
 import {
@@ -54,6 +57,81 @@ export default function Reports({ orders }: ReportsProps) {
   const totalOrders = orders.length;
   const totalValue = orders.reduce((sum, order) => sum + parseFloat(order.valorPedido), 0);
   const averageOrderValue = totalValue / totalOrders;
+
+  // Financial analytics with new business rules
+  const canceledOrders = orders.filter(order =>
+    order.situacaoComercial.toLowerCase().includes("cancelado")
+  );
+  const canceledValue = canceledOrders.reduce((sum, order) => sum + parseFloat(order.valorPedido), 0);
+  const realValue = totalValue - canceledValue;
+  const activeOrders = orders.filter(order => !order.situacaoComercial.toLowerCase().includes("cancelado"));
+
+  // Commercial status analysis
+  const commercialStatusStats = orders.reduce((acc, order) => {
+    const status = order.situacaoComercial;
+    if (!acc[status]) {
+      acc[status] = { count: 0, value: 0 };
+    }
+    acc[status].count++;
+    acc[status].value += parseFloat(order.valorPedido);
+    return acc;
+  }, {} as Record<string, { count: number; value: number }>);
+
+  const commercialStatusData = Object.entries(commercialStatusStats)
+    .map(([status, stats]) => ({ status, ...stats }))
+    .sort((a, b) => b.value - a.value);
+
+  // Fiscal status analysis
+  const fiscalStatusStats = orders.reduce((acc, order) => {
+    const status = order.situacaoFiscal;
+    if (!acc[status]) {
+      acc[status] = { count: 0, value: 0 };
+    }
+    acc[status].count++;
+    acc[status].value += parseFloat(order.valorPedido);
+    return acc;
+  }, {} as Record<string, { count: number; value: number }>);
+
+  const fiscalStatusData = Object.entries(fiscalStatusStats)
+    .map(([status, stats]) => ({ status, ...stats }))
+    .sort((a, b) => b.value - a.value);
+
+  // Enhanced payment analysis with new rules
+  const paidOrdersEnhanced = orders.filter(order => {
+    const commercialLower = order.situacaoComercial.toLowerCase().trim();
+    const fiscalLower = order.situacaoFiscal.toLowerCase().trim();
+
+    // Canceled orders are not paid
+    if (commercialLower.includes("cancelado")) return false;
+
+    // NF Emitida = paid
+    if (fiscalLower.includes("nf emitida")) return true;
+
+    // Payment methods
+    const hasPaymentMethod = order.planoPagamento.includes("BOLETO") ||
+                           order.planoPagamento.includes("Pix") ||
+                           order.planoPagamento.includes("Cartão de Crédito ON-LINE");
+
+    // Home delivery with valid commercial status
+    const isValidCommercialStatus = commercialLower.includes("aprovado") ||
+                                  commercialLower.includes("entregue") ||
+                                  commercialLower.includes("transporte");
+
+    const isHomeDelivery = (() => {
+      const tipoEntrega = order.tipoEntrega.toLowerCase().trim();
+      return tipoEntrega.includes("no endereço da entrega") ||
+             tipoEntrega.includes("no endereco da entrega") ||
+             tipoEntrega.includes("endereço da entrega") ||
+             tipoEntrega.includes("endereco da entrega") ||
+             tipoEntrega.includes("endereço de entrega") ||
+             tipoEntrega.includes("endereco de entrega") ||
+             (!tipoEntrega.includes("retirar") && !tipoEntrega.includes("central"));
+    })();
+
+    return hasPaymentMethod || (isHomeDelivery && isValidCommercialStatus);
+  });
+
+  const paidValue = paidOrdersEnhanced.reduce((sum, order) => sum + parseFloat(order.valorPedido), 0);
 
   // Responsavel analysis
   const responsavelStats = orders.reduce((acc, order) => {
@@ -158,7 +236,7 @@ export default function Reports({ orders }: ReportsProps) {
   return (
     <div className="space-y-6">
       {/* Header Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card className="backdrop-blur-xl bg-card/60 border-border/40">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -207,7 +285,305 @@ export default function Reports({ orders }: ReportsProps) {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="backdrop-blur-xl bg-card/60 border-border/40">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Valor Real</p>
+                <p className="text-2xl font-bold text-green-600">R$ {realValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="backdrop-blur-xl bg-card/60 border-border/40">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Cancelados</p>
+                <p className="text-2xl font-bold text-red-600">{canceledOrders.length}</p>
+                <p className="text-xs text-red-500">R$ {canceledValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              </div>
+              <XCircle className="h-8 w-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Commercial Status Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <Card className="backdrop-blur-xl bg-card/60 border-border/40">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Status Comercial dos Pedidos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={commercialStatusData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="status"
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  interval={0}
+                  fontSize={12}
+                />
+                <YAxis />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value, name) => {
+                    if (name === 'value') return [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor Total'];
+                    if (name === 'count') return [value, 'Quantidade'];
+                    return [value, name];
+                  }}
+                />
+                <Bar dataKey="count" fill="hsl(var(--chart-2))" name="count" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="backdrop-blur-xl bg-card/60 border-border/40">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5" />
+              Status Fiscal dos Pedidos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={fiscalStatusData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="status"
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  interval={0}
+                  fontSize={12}
+                />
+                <YAxis />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value, name) => {
+                    if (name === 'value') return [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor Total'];
+                    if (name === 'count') return [value, 'Quantidade'];
+                    return [value, name];
+                  }}
+                />
+                <Bar dataKey="count" fill="hsl(var(--chart-3))" name="count" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Enhanced Payment Analysis */}
+      <Card className="backdrop-blur-xl bg-card/60 border-border/40 mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Análise de Pagamentos com Novas Regras de Negócio
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="p-4 bg-gradient-to-br from-green-100/50 to-green-50/30 rounded-lg border border-green-200/50">
+              <div className="flex items-center gap-2 mb-2">
+                <XCircle className="h-5 w-5 text-green-600" />
+                <span className="font-medium text-green-700">Pedidos Pagos</span>
+              </div>
+              <div className="text-2xl font-bold text-green-700">{paidOrdersEnhanced.length}</div>
+              <div className="text-sm text-green-600">
+                R$ {paidValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {totalOrders > 0 ? Math.round((paidOrdersEnhanced.length / totalOrders) * 100) : 0}% do total
+              </div>
+            </div>
+
+            <div className="p-4 bg-gradient-to-br from-yellow-100/50 to-yellow-50/30 rounded-lg border border-yellow-200/50">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="h-5 w-5 text-yellow-600" />
+                <span className="font-medium text-yellow-700">Pendentes</span>
+              </div>
+              <div className="text-2xl font-bold text-yellow-700">{totalOrders - paidOrdersEnhanced.length - canceledOrders.length}</div>
+              <div className="text-sm text-yellow-600">
+                R$ {(totalValue - paidValue - canceledValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {totalOrders > 0 ? Math.round(((totalOrders - paidOrdersEnhanced.length - canceledOrders.length) / totalOrders) * 100) : 0}% do total
+              </div>
+            </div>
+
+            <div className="p-4 bg-gradient-to-br from-red-100/50 to-red-50/30 rounded-lg border border-red-200/50">
+              <div className="flex items-center gap-2 mb-2">
+                <XCircle className="h-5 w-5 text-red-600" />
+                <span className="font-medium text-red-700">Cancelados</span>
+              </div>
+              <div className="text-2xl font-bold text-red-700">{canceledOrders.length}</div>
+              <div className="text-sm text-red-600">
+                R$ {canceledValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {totalOrders > 0 ? Math.round((canceledOrders.length / totalOrders) * 100) : 0}% do total
+              </div>
+            </div>
+
+            <div className="p-4 bg-gradient-to-br from-blue-100/50 to-blue-50/30 rounded-lg border border-blue-200/50">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="h-5 w-5 text-blue-600" />
+                <span className="font-medium text-blue-700">Taxa de Conversão</span>
+              </div>
+              <div className="text-2xl font-bold text-blue-700">
+                {totalOrders > 0 ? Math.round((paidOrdersEnhanced.length / (totalOrders - canceledOrders.length)) * 100) : 0}%
+              </div>
+              <div className="text-sm text-blue-600">Pagos vs Ativos</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Excluindo cancelados
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 bg-gradient-to-r from-chart-1/10 via-chart-2/10 to-chart-3/10 rounded-lg border border-border/50">
+            <div className="flex items-center gap-2 mb-3">
+              <Target className="h-5 w-5 text-chart-1" />
+              <span className="font-medium">Regras de Pagamento Aplicadas</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <h5 className="font-medium mb-2">✅ Considerados Pagos:</h5>
+                <ul className="space-y-1 text-muted-foreground">
+                  <li>• Status Fiscal: "NF Emitida"</li>
+                  <li>• Pagamento: BOLETO, Pix, Cartão Online</li>
+                  <li>• Entrega em casa (se Aprovado/Entregue/Transporte)</li>
+                </ul>
+              </div>
+              <div>
+                <h5 className="font-medium mb-2">❌ Não Considerados Pagos:</h5>
+                <ul className="space-y-1 text-muted-foreground">
+                  <li>• Status Comercial: "Cancelado"</li>
+                  <li>• Retirada na loja (sem confirmação de pagamento)</li>
+                  <li>• Entrega em casa se status inadequado</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Financial Impact Analysis */}
+      <Card className="backdrop-blur-xl bg-card/60 border-border/40 mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Impacto Financeiro dos Cancelamentos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="p-4 bg-gradient-to-br from-chart-1/10 to-chart-1/5 rounded-lg border border-chart-1/20">
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Análise Comparativa de Valores
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Valor Bruto Total:</span>
+                    <span className="font-bold text-lg">
+                      R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-red-600">
+                    <span className="text-sm">(-) Valor Cancelado:</span>
+                    <span className="font-bold">
+                      -R$ {canceledValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between items-center text-green-600">
+                      <span className="text-sm font-medium">(=) Valor Real:</span>
+                      <span className="font-bold text-xl">
+                        R$ {realValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-gradient-to-br from-red-100/50 to-red-50/30 rounded-lg border border-red-200/50">
+                <h4 className="font-medium mb-3 flex items-center gap-2 text-red-700">
+                  <XCircle className="h-4 w-4" />
+                  Impacto dos Cancelamentos
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Taxa de Cancelamento:</span>
+                    <span className="font-medium text-red-600">
+                      {totalOrders > 0 ? ((canceledOrders.length / totalOrders) * 100).toFixed(1) : 0}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Perda Financeira:</span>
+                    <span className="font-medium text-red-600">
+                      {totalValue > 0 ? ((canceledValue / totalValue) * 100).toFixed(1) : 0}% do faturamento
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Ticket Médio Cancelado:</span>
+                    <span className="font-medium text-red-600">
+                      R$ {canceledOrders.length > 0 ? (canceledValue / canceledOrders.length).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={[
+                  { name: 'Valor Bruto', value: totalValue, fill: '#8884d8' },
+                  { name: 'Valor Cancelado', value: canceledValue, fill: '#ff4444' },
+                  { name: 'Valor Real', value: realValue, fill: '#44ff44' }
+                ]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value) => [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke="hsl(var(--chart-1))"
+                    fill="hsl(var(--chart-1))"
+                    fillOpacity={0.6}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

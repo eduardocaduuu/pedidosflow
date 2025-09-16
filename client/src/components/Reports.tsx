@@ -210,10 +210,10 @@ export default function Reports({ orders }: ReportsProps) {
   const sortedOrders = orders.map(order => ({
     ...order,
     numericValue: parseFloat(order.valorPedido)
-  })).sort((a, b) => b.numericValue - a.numericValue);
+  })).filter(order => order.numericValue > 0).sort((a, b) => b.numericValue - a.numericValue);
 
   const expensiveOrders = sortedOrders.slice(0, 5); // Top 5 most expensive
-  const cheapOrders = sortedOrders.slice(-5).reverse(); // Top 5 cheapest
+  const cheapOrders = sortedOrders.slice(-5).reverse(); // Top 5 cheapest (excluding R$ 0,00)
 
   // Store traffic analysis (pickup orders)
   const pickupOrders = orders.filter(order => {

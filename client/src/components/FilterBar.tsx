@@ -16,10 +16,6 @@ export interface FilterOptions {
   situacaoFiscal: string;
   situacaoComercial: string;
   tipoEntrega: string;
-  planoPagamento: string;
-  ciclo: string;
-  valorMin: string;
-  valorMax: string;
 }
 
 export default function FilterBar({ onFilterChange, totalOrders = 0 }: FilterBarProps) {
@@ -28,13 +24,8 @@ export default function FilterBar({ onFilterChange, totalOrders = 0 }: FilterBar
     situacaoFiscal: "",
     situacaoComercial: "",
     tipoEntrega: "",
-    planoPagamento: "",
-    ciclo: "",
-    valorMin: "",
-    valorMax: "",
   });
 
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const updateFilter = (key: keyof FilterOptions, value: string) => {
     const newFilters = { ...filters, [key]: value };
@@ -49,10 +40,6 @@ export default function FilterBar({ onFilterChange, totalOrders = 0 }: FilterBar
       situacaoFiscal: "",
       situacaoComercial: "",
       tipoEntrega: "",
-      planoPagamento: "",
-      ciclo: "",
-      valorMin: "",
-      valorMax: "",
     };
     setFilters(emptyFilters);
     onFilterChange?.(emptyFilters);
@@ -115,7 +102,7 @@ export default function FilterBar({ onFilterChange, totalOrders = 0 }: FilterBar
           </div>
 
           {/* Quick Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Select
               value={filters.situacaoFiscal}
               onValueChange={(value) => updateFilter('situacaoFiscal', value)}
@@ -126,7 +113,6 @@ export default function FilterBar({ onFilterChange, totalOrders = 0 }: FilterBar
               <SelectContent>
                 <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="nf-emitida">NF Emitida</SelectItem>
-                <SelectItem value="faturado">Faturado</SelectItem>
                 <SelectItem value="nao-faturado">Não Faturado</SelectItem>
               </SelectContent>
             </Select>
@@ -162,76 +148,8 @@ export default function FilterBar({ onFilterChange, totalOrders = 0 }: FilterBar
               </SelectContent>
             </Select>
 
-            <Select 
-              value={filters.planoPagamento} 
-              onValueChange={(value) => updateFilter('planoPagamento', value)}
-            >
-              <SelectTrigger data-testid="select-payment-plan">
-                <SelectValue placeholder="Pagamento" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="pago">Pago</SelectItem>
-                <SelectItem value="pendente">Pendente</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button 
-              variant="outline" 
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center gap-2"
-              data-testid="button-advanced-filters"
-            >
-              <Filter className="h-4 w-4" />
-              Avançado
-            </Button>
           </div>
 
-          {/* Advanced Filters */}
-          {showAdvanced && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-card/30 rounded-lg backdrop-blur-sm border border-border/50">
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Ciclo de Captação
-                </label>
-                <Input
-                  placeholder="Ex: 13, 14..."
-                  value={filters.ciclo}
-                  onChange={(e) => updateFilter('ciclo', e.target.value)}
-                  data-testid="input-cycle"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  Valor Mínimo
-                </label>
-                <Input
-                  type="number"
-                  placeholder="R$ 0,00"
-                  value={filters.valorMin}
-                  onChange={(e) => updateFilter('valorMin', e.target.value)}
-                  data-testid="input-min-value"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  Valor Máximo
-                </label>
-                <Input
-                  type="number"
-                  placeholder="R$ 10.000,00"
-                  value={filters.valorMax}
-                  onChange={(e) => updateFilter('valorMax', e.target.value)}
-                  data-testid="input-max-value"
-                />
-              </div>
-            </div>
-          )}
 
           {/* Active Filters Display */}
           {activeFiltersCount > 0 && (

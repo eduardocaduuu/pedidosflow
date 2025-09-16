@@ -232,15 +232,6 @@ export default function OrderCard({ order }: OrderCardProps) {
                     Ajudou o cliente a fazer e aprovar o pedido
                   </div>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Usuário de Finalização:</span>
-                  <span className="ml-2 font-medium block sm:inline" data-testid={`text-staff-finalization-${order.codigoPedido}`}>
-                    {order.usuarioFinalizacao || "Não atribuído"}
-                  </span>
-                  <div className="text-xs text-muted-foreground">
-                    Ajudou o cliente a finalizar o pedido
-                  </div>
-                </div>
               </div>
             </div>
 

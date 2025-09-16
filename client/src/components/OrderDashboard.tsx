@@ -87,8 +87,7 @@ export default function OrderDashboard() {
       filtered = filtered.filter(order =>
         order.codigoPedido.toLowerCase().includes(filterOptions.search.toLowerCase()) ||
         order.nomePessoa.toLowerCase().includes(filterOptions.search.toLowerCase()) ||
-        order.responsavelEstrutura?.toLowerCase().includes(filterOptions.search.toLowerCase()) ||
-        order.usuarioFinalizacao?.toLowerCase().includes(filterOptions.search.toLowerCase())
+        order.responsavelEstrutura?.toLowerCase().includes(filterOptions.search.toLowerCase())
       );
     }
 
@@ -189,9 +188,6 @@ export default function OrderDashboard() {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-chart-3 to-chart-1 bg-clip-text text-transparent tracking-tight" data-testid="text-app-title">
                 Sistema de Gestão de Pedidos
               </h1>
-              <p className="text-sm text-muted-foreground font-light tracking-wide">
-                Design profissional com estilo vintage moderno
-              </p>
             </div>
             <div className="flex items-center gap-4">
               <Button

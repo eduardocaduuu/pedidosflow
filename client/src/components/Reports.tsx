@@ -12,6 +12,7 @@ import {
   XCircle,
   Truck,
   Package,
+  CheckCircle,
   BarChart as BarChartIcon
 } from "lucide-react";
 import {

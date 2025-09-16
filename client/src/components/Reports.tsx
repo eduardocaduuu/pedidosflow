@@ -242,18 +242,38 @@ export default function Reports({ orders }: ReportsProps) {
     .sort((a, b) => b.totalValue - a.totalValue)
     .slice(0, 8);
 
+  // Cancellation reasons analysis
+  const canceledOrdersWithReasons = orders.filter(order =>
+    order.situacaoComercial.toLowerCase().includes("cancelado")
+  );
+
+  const cancellationReasonStats = canceledOrdersWithReasons.reduce((acc, order) => {
+    const reason = order.detalheSituacaoComercial || "Motivo não especificado";
+    if (!acc[reason]) {
+      acc[reason] = { count: 0, value: 0 };
+    }
+    acc[reason].count++;
+    acc[reason].value += parseFloat(order.valorPedido);
+    return acc;
+  }, {} as Record<string, { count: number; value: number }>);
+
+  const cancellationReasonsData = Object.entries(cancellationReasonStats)
+    .map(([reason, stats]) => ({ reason, ...stats }))
+    .sort((a, b) => b.count - a.count);
+
   // Payment method analysis
   const paymentStats = orders.reduce((acc, order) => {
     const payment = order.planoPagamento;
     if (!acc[payment]) {
-      acc[payment] = 0;
+      acc[payment] = { count: 0, value: 0 };
     }
-    acc[payment]++;
+    acc[payment].count++;
+    acc[payment].value += parseFloat(order.valorPedido);
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, { count: number; value: number }>);
 
   const paymentData = Object.entries(paymentStats)
-    .map(([method, count]) => ({ method, count }))
+    .map(([method, stats]) => ({ method, ...stats }))
     .sort((a, b) => b.count - a.count);
 
   // Value distribution
@@ -726,42 +746,155 @@ export default function Reports({ orders }: ReportsProps) {
           </CardContent>
         </Card>
 
-        {/* Payment Methods */}
+        {/* Cancellation Reasons Analysis */}
+        <Card className="backdrop-blur-xl bg-card/60 border-border/40">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-red-600" />
+              Motivos de Cancelamento
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {canceledOrdersWithReasons.length > 0 ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                  <div className="text-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                    <div className="text-2xl font-bold text-red-600">{canceledOrdersWithReasons.length}</div>
+                    <div className="text-sm text-red-700">Pedidos Cancelados</div>
+                  </div>
+                  <div className="text-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                    <div className="text-2xl font-bold text-red-600">
+                      R$ {canceledValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </div>
+                    <div className="text-sm text-red-700">Valor Perdido</div>
+                  </div>
+                  <div className="text-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                    <div className="text-2xl font-bold text-red-600">
+                      {totalOrders > 0 ? ((canceledOrdersWithReasons.length / totalOrders) * 100).toFixed(1) : 0}%
+                    </div>
+                    <div className="text-sm text-red-700">Taxa de Cancelamento</div>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={cancellationReasonsData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="reason"
+                      angle={-45}
+                      textAnchor="end"
+                      height={120}
+                      interval={0}
+                      fontSize={11}
+                    />
+                    <YAxis />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                      formatter={(value, name) => {
+                        if (name === 'count') return [value, 'Quantidade'];
+                        if (name === 'value') return [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor'];
+                        return [value, name];
+                      }}
+                    />
+                    <Bar dataKey="count" fill="#dc2626" name="count" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <XCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Nenhum pedido cancelado encontrado.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Enhanced Payment Methods Chart */}
         <Card className="backdrop-blur-xl bg-card/60 border-border/40">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
-              Métodos de Pagamento
+              Métodos de Pagamento Detalhados
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={paymentData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                  label={({ method, count }) => `${method}: ${count}`}
-                >
-                  {paymentData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Pie Chart */}
+              <div>
+                <ResponsiveContainer width="100%" height={400}>
+                  <PieChart>
+                    <Pie
+                      data={paymentData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={120}
+                      fill="#8884d8"
+                      dataKey="count"
+                      label={({ method, count, percent }) =>
+                        `${(percent * 100).toFixed(1)}%`
+                      }
+                      labelLine={false}
+                    >
+                      {paymentData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                      formatter={(value, name, props) => {
+                        if (name === 'count') {
+                          return [
+                            `${value} pedidos (R$ ${props.payload.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`,
+                            props.payload.method
+                          ];
+                        }
+                        return [value, name];
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Detailed List */}
+              <div className="space-y-3">
+                <h4 className="font-medium mb-4">Detalhamento por Método</h4>
+                <div className="max-h-96 overflow-y-auto space-y-2">
+                  {paymentData.map((payment, index) => (
+                    <div key={payment.method} className="flex items-center justify-between p-3 bg-card/30 rounded-lg border border-border/30">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-4 h-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate max-w-[180px]" title={payment.method}>
+                            {payment.method}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {((payment.count / totalOrders) * 100).toFixed(1)}% do total
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="font-bold text-sm">{payment.count} pedidos</div>
+                        <div className="text-xs text-muted-foreground">
+                          R$ {payment.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
-
         {/* Value Distribution */}
         <Card className="backdrop-blur-xl bg-card/60 border-border/40">
           <CardHeader>

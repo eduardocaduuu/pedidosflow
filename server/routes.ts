@@ -130,6 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             valorPedido: safeString(row['ValorPedido'] || row['Valor do Pedido'], '0.00'),
             tipoEntrega: safeString(row['Tipo de Entrega'], 'No endereço da entrega'),
             situacaoComercial: safeString(row['SituaçãoComercial'] || row['Situação Comercial'], 'Pendente'),
+            detalheSituacaoComercial: safeString(row['DetalheSituaçãoComercial'] || row['Detalhe Situação Comercial'] || row['DetalheSituacao'] || row['Detalhe da Situação']),
             // Safe date parsing
             dataAprovacao: parseExcelDate(row['Data Aprovação'] || row['Data de Aprovação']),
             previsaoEntrega: parseExcelDate(row['PrevisãoEntrega'] || row['Previsão de Entrega']),

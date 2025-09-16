@@ -10,6 +10,7 @@ export const insertOrderSchema = z.object({
   valorPedido: z.string(),
   tipoEntrega: z.string(),
   situacaoComercial: z.string(),
+  detalheSituacaoComercial: z.string().optional(),
   dataAprovacao: z.date().optional(),
   previsaoEntrega: z.date().optional(),
   cicloCaptacao: z.string(),

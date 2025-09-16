@@ -44,11 +44,42 @@ export default function OrderStatistics({ orders }: OrderStatisticsProps) {
            tipoEntrega.includes("central de servicos");
   }).length;
 
+  // Enhanced payment calculation with refined business rules
   const paidOrders = orders.filter(order => {
-    const isPaid = order.planoPagamento.includes("BOLETO") ||
-                  order.planoPagamento.includes("Pix") ||
-                  order.planoPagamento.includes("Cartão de Crédito ON-LINE");
-    return isPaid;
+    const commercialLower = order.situacaoComercial.toLowerCase().trim();
+    const fiscalLower = order.situacaoFiscal.toLowerCase().trim();
+    const paymentLower = order.planoPagamento.toLowerCase().trim();
+
+    // Canceled orders are refunded (not paid), even if NF Emitida
+    if (commercialLower.includes("cancelado")) return false;
+
+    // NF Emitida + not canceled = paid (money in cash box)
+    if (fiscalLower.includes("nf emitida") || fiscalLower.includes("nota fiscal emitida")) return true;
+
+    // Entregue = always paid (all have NF Emitida in practice)
+    if (commercialLower.includes("entregue")) return true;
+
+    // Transporte = always paid (all have NF Emitida in practice)
+    if (commercialLower.includes("transporte")) return true;
+
+    // Aprovado = only paid if specific payment methods
+    if (commercialLower.includes("aprovado")) {
+      const validPaymentMethods = [
+        "boleto",
+        "parcele com pix",
+        "cartão de crédito on-line",
+        "cartao de credito on-line",
+        "dinheiro",
+        "pix"
+      ];
+
+      return validPaymentMethods.some(method => paymentLower.includes(method));
+    }
+
+    // Captação = future value, not paid yet
+    if (commercialLower.includes("captacao") || commercialLower.includes("captação")) return false;
+
+    return false;
   }).length;
 
   const averageOrderValue = totalOrders > 0 ? totalValue / totalOrders : 0;
@@ -144,12 +175,13 @@ export default function OrderStatistics({ orders }: OrderStatisticsProps) {
           {/* Payment Status */}
           <div className="flex items-center justify-between p-3 bg-card/20 rounded-lg">
             <div>
-              <div className="text-sm text-muted-foreground">Pedidos Pagos</div>
+              <div className="text-sm text-muted-foreground">Dinheiro em Caixa</div>
               <div className="text-lg font-semibold">
                 {paidOrders} de {totalOrders}
               </div>
+              <div className="text-xs text-green-600">Pedidos efetivamente pagos</div>
             </div>
-            <Badge variant="outline" className="bg-chart-1/10">
+            <Badge variant="outline" className="bg-green-100/50 border-green-200 text-green-700">
               {totalOrders > 0 ? Math.round((paidOrders / totalOrders) * 100) : 0}%
             </Badge>
           </div>

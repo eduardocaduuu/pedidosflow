@@ -14,26 +14,29 @@ export default function StatusBadge({ type, status, className, deliveryType, fis
   const getStatusConfig = () => {
     switch (type) {
       case "payment":
-        // Enhanced Business Rules:
-        // 1. If commercial status is "Cancelado", no payment status should exist
-        // 2. If fiscal status is "NF Emitida", order is paid
-        // 3. BOLETO, Pix ou Cartão de Crédito ON-LINE = já foi pago
-        // 4. Home delivery only counts as paid for Aprovado, Entregue, Transporte status
+        // Refined Business Rules for Payment Status:
+        // 1. Cancelado: Estornado (money refunded, even if NF Emitida)
+        // 2. NF Emitida + !Cancelado: Pago (money in cash box)
+        // 3. Entregue: Always paid (all have NF Emitida)
+        // 4. Transporte: Always paid (all have NF Emitida)
+        // 5. Aprovado: Only paid if payment method is BOLETO, Parcele com Pix, Cartão de Crédito ON-LINE, Dinheiro, PIX
+        // 6. Captação: Future value, not paid yet
 
         const commercialLower = commercialStatus?.toLowerCase().trim() || "";
         const fiscalLower = fiscalStatus?.toLowerCase().trim() || "";
+        const paymentLower = status.toLowerCase().trim();
 
-        // Rule 1: Canceled orders have no payment status
+        // Rule 1: Canceled orders = Refunded (even if NF Emitida)
         if (commercialLower.includes("cancelado")) {
           return {
-            variant: "secondary" as const,
+            variant: "destructive" as const,
             icon: XCircle,
-            label: "Cancelado",
-            className: "bg-gray-500 text-white shrink-0"
+            label: "Estornado",
+            className: "bg-red-600 text-white shrink-0"
           };
         }
 
-        // Rule 2: NF Emitida = Paid
+        // Rule 2: NF Emitida + not canceled = Paid (money in cash box)
         const isNFEmitida = fiscalLower.includes("nf emitida") || fiscalLower.includes("nota fiscal emitida");
         if (isNFEmitida) {
           return {
@@ -44,43 +47,74 @@ export default function StatusBadge({ type, status, className, deliveryType, fis
           };
         }
 
-        // Rule 3: Payment methods
-        const hasPaymentMethod = status.includes("BOLETO") ||
-                               status.includes("Pix") ||
-                               status.includes("Cartão de Crédito ON-LINE");
-
-        // Rule 4: Home delivery logic with commercial status restriction
-        const isValidCommercialStatus = commercialLower.includes("aprovado") ||
-                                      commercialLower.includes("entregue") ||
-                                      commercialLower.includes("transporte");
-
-        const isHomeDelivery = deliveryType && isValidCommercialStatus ? (() => {
-          const tipoEntrega = deliveryType.toLowerCase().trim();
-          return tipoEntrega.includes("no endereço da entrega") ||
-                 tipoEntrega.includes("no endereco da entrega") ||
-                 tipoEntrega.includes("endereço da entrega") ||
-                 tipoEntrega.includes("endereco da entrega") ||
-                 tipoEntrega.includes("endereço de entrega") ||
-                 tipoEntrega.includes("endereco de entrega") ||
-                 (!tipoEntrega.includes("retirar") && !tipoEntrega.includes("central"));
-        })() : false;
-
-        const isPaid = hasPaymentMethod || isHomeDelivery;
-
-        if (isPaid) {
+        // Rule 3: Entregue = Always paid (all have NF Emitida in practice)
+        if (commercialLower.includes("entregue")) {
           return {
             variant: "default" as const,
             icon: CheckCircle,
             label: "Pago",
-            className: "bg-chart-1 text-white shrink-0"
+            className: "bg-green-600 text-white shrink-0"
           };
         }
 
+        // Rule 4: Transporte = Always paid (all have NF Emitida in practice)
+        if (commercialLower.includes("transporte")) {
+          return {
+            variant: "default" as const,
+            icon: CheckCircle,
+            label: "Pago",
+            className: "bg-green-600 text-white shrink-0"
+          };
+        }
+
+        // Rule 5: Aprovado = Only paid if specific payment methods
+        if (commercialLower.includes("aprovado")) {
+          const validPaymentMethods = [
+            "boleto",
+            "parcele com pix",
+            "cartão de crédito on-line",
+            "cartao de credito on-line",
+            "dinheiro",
+            "pix"
+          ];
+
+          const isPaidMethod = validPaymentMethods.some(method =>
+            paymentLower.includes(method)
+          );
+
+          if (isPaidMethod) {
+            return {
+              variant: "default" as const,
+              icon: CheckCircle,
+              label: "Pago",
+              className: "bg-chart-1 text-white shrink-0"
+            };
+          }
+
+          return {
+            variant: "secondary" as const,
+            icon: Clock,
+            label: "Pendente",
+            className: "bg-yellow-600 text-white shrink-0"
+          };
+        }
+
+        // Rule 6: Captação = Future value, not paid yet
+        if (commercialLower.includes("captacao") || commercialLower.includes("captação")) {
+          return {
+            variant: "secondary" as const,
+            icon: Clock,
+            label: "Valor Futuro",
+            className: "bg-orange-600 text-white shrink-0"
+          };
+        }
+
+        // Default: Pendente
         return {
           variant: "secondary" as const,
           icon: Clock,
           label: "Pendente",
-          className: "bg-chart-2 text-white shrink-0"
+          className: "bg-yellow-600 text-white shrink-0"
         };
 
       case "fiscal":

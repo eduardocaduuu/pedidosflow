@@ -96,42 +96,81 @@ export default function Reports({ orders }: ReportsProps) {
     .map(([status, stats]) => ({ status, ...stats }))
     .sort((a, b) => b.value - a.value);
 
-  // Enhanced payment analysis with new rules
+  // Enhanced payment analysis with refined business rules
   const paidOrdersEnhanced = orders.filter(order => {
     const commercialLower = order.situacaoComercial.toLowerCase().trim();
     const fiscalLower = order.situacaoFiscal.toLowerCase().trim();
+    const paymentLower = order.planoPagamento.toLowerCase().trim();
 
-    // Canceled orders are not paid
+    // Canceled orders are refunded (not paid), even if NF Emitida
     if (commercialLower.includes("cancelado")) return false;
 
-    // NF Emitida = paid
-    if (fiscalLower.includes("nf emitida")) return true;
+    // NF Emitida + not canceled = paid (money in cash box)
+    if (fiscalLower.includes("nf emitida") || fiscalLower.includes("nota fiscal emitida")) return true;
 
-    // Payment methods
-    const hasPaymentMethod = order.planoPagamento.includes("BOLETO") ||
-                           order.planoPagamento.includes("Pix") ||
-                           order.planoPagamento.includes("Cartão de Crédito ON-LINE");
+    // Entregue = always paid (all have NF Emitida in practice)
+    if (commercialLower.includes("entregue")) return true;
 
-    // Home delivery with valid commercial status
-    const isValidCommercialStatus = commercialLower.includes("aprovado") ||
-                                  commercialLower.includes("entregue") ||
-                                  commercialLower.includes("transporte");
+    // Transporte = always paid (all have NF Emitida in practice)
+    if (commercialLower.includes("transporte")) return true;
 
-    const isHomeDelivery = (() => {
-      const tipoEntrega = order.tipoEntrega.toLowerCase().trim();
-      return tipoEntrega.includes("no endereço da entrega") ||
-             tipoEntrega.includes("no endereco da entrega") ||
-             tipoEntrega.includes("endereço da entrega") ||
-             tipoEntrega.includes("endereco da entrega") ||
-             tipoEntrega.includes("endereço de entrega") ||
-             tipoEntrega.includes("endereco de entrega") ||
-             (!tipoEntrega.includes("retirar") && !tipoEntrega.includes("central"));
-    })();
+    // Aprovado = only paid if specific payment methods
+    if (commercialLower.includes("aprovado")) {
+      const validPaymentMethods = [
+        "boleto",
+        "parcele com pix",
+        "cartão de crédito on-line",
+        "cartao de credito on-line",
+        "dinheiro",
+        "pix"
+      ];
 
-    return hasPaymentMethod || (isHomeDelivery && isValidCommercialStatus);
+      return validPaymentMethods.some(method => paymentLower.includes(method));
+    }
+
+    // Captação = future value, not paid yet
+    if (commercialLower.includes("captacao") || commercialLower.includes("captação")) return false;
+
+    return false;
   });
 
   const paidValue = paidOrdersEnhanced.reduce((sum, order) => sum + parseFloat(order.valorPedido), 0);
+
+  // Refunded orders (canceled with money returned)
+  const refundedOrders = orders.filter(order =>
+    order.situacaoComercial.toLowerCase().includes("cancelado")
+  );
+  const refundedValue = refundedOrders.reduce((sum, order) => sum + parseFloat(order.valorPedido), 0);
+
+  // Future value orders (captação - potential income)
+  const futureValueOrders = orders.filter(order => {
+    const commercialLower = order.situacaoComercial.toLowerCase().trim();
+    return commercialLower.includes("captacao") || commercialLower.includes("captação");
+  });
+  const futureValue = futureValueOrders.reduce((sum, order) => sum + parseFloat(order.valorPedido), 0);
+
+  // Pending orders (approved but not paid yet)
+  const pendingOrders = orders.filter(order => {
+    const commercialLower = order.situacaoComercial.toLowerCase().trim();
+    const fiscalLower = order.situacaoFiscal.toLowerCase().trim();
+    const paymentLower = order.planoPagamento.toLowerCase().trim();
+
+    // Only Aprovado orders that don't have valid payment methods
+    if (!commercialLower.includes("aprovado")) return false;
+    if (fiscalLower.includes("nf emitida")) return false; // Already paid
+
+    const validPaymentMethods = [
+      "boleto",
+      "parcele com pix",
+      "cartão de crédito on-line",
+      "cartao de credito on-line",
+      "dinheiro",
+      "pix"
+    ];
+
+    return !validPaymentMethods.some(method => paymentLower.includes(method));
+  });
+  const pendingValue = pendingOrders.reduce((sum, order) => sum + parseFloat(order.valorPedido), 0);
 
   // Responsavel analysis
   const responsavelStats = orders.reduce((acc, order) => {
@@ -403,8 +442,8 @@ export default function Reports({ orders }: ReportsProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="p-4 bg-gradient-to-br from-green-100/50 to-green-50/30 rounded-lg border border-green-200/50">
               <div className="flex items-center gap-2 mb-2">
-                <XCircle className="h-5 w-5 text-green-600" />
-                <span className="font-medium text-green-700">Pedidos Pagos</span>
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <span className="font-medium text-green-700">Pagos (Em Caixa)</span>
               </div>
               <div className="text-2xl font-bold text-green-700">{paidOrdersEnhanced.length}</div>
               <div className="text-sm text-green-600">
@@ -420,26 +459,40 @@ export default function Reports({ orders }: ReportsProps) {
                 <Clock className="h-5 w-5 text-yellow-600" />
                 <span className="font-medium text-yellow-700">Pendentes</span>
               </div>
-              <div className="text-2xl font-bold text-yellow-700">{totalOrders - paidOrdersEnhanced.length - canceledOrders.length}</div>
+              <div className="text-2xl font-bold text-yellow-700">{pendingOrders.length}</div>
               <div className="text-sm text-yellow-600">
-                R$ {(totalValue - paidValue - canceledValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                R$ {pendingValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                {totalOrders > 0 ? Math.round(((totalOrders - paidOrdersEnhanced.length - canceledOrders.length) / totalOrders) * 100) : 0}% do total
+                Aprovados sem forma de pagamento
               </div>
             </div>
 
             <div className="p-4 bg-gradient-to-br from-red-100/50 to-red-50/30 rounded-lg border border-red-200/50">
               <div className="flex items-center gap-2 mb-2">
                 <XCircle className="h-5 w-5 text-red-600" />
-                <span className="font-medium text-red-700">Cancelados</span>
+                <span className="font-medium text-red-700">Estornados</span>
               </div>
-              <div className="text-2xl font-bold text-red-700">{canceledOrders.length}</div>
+              <div className="text-2xl font-bold text-red-700">{refundedOrders.length}</div>
               <div className="text-sm text-red-600">
-                R$ {canceledValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                R$ {refundedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                {totalOrders > 0 ? Math.round((canceledOrders.length / totalOrders) * 100) : 0}% do total
+                Cancelados com dinheiro devolvido
+              </div>
+            </div>
+
+            <div className="p-4 bg-gradient-to-br from-orange-100/50 to-orange-50/30 rounded-lg border border-orange-200/50">
+              <div className="flex items-center gap-2 mb-2">
+                <Package className="h-5 w-5 text-orange-600" />
+                <span className="font-medium text-orange-700">Valor Futuro</span>
+              </div>
+              <div className="text-2xl font-bold text-orange-700">{futureValueOrders.length}</div>
+              <div className="text-sm text-orange-600">
+                R$ {futureValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Captação - Potencial receita
               </div>
             </div>
 
@@ -449,11 +502,12 @@ export default function Reports({ orders }: ReportsProps) {
                 <span className="font-medium text-blue-700">Taxa de Conversão</span>
               </div>
               <div className="text-2xl font-bold text-blue-700">
-                {totalOrders > 0 ? Math.round((paidOrdersEnhanced.length / (totalOrders - canceledOrders.length)) * 100) : 0}%
+                {(totalOrders - refundedOrders.length - futureValueOrders.length) > 0 ?
+                  Math.round((paidOrdersEnhanced.length / (totalOrders - refundedOrders.length - futureValueOrders.length)) * 100) : 0}%
               </div>
-              <div className="text-sm text-blue-600">Pagos vs Ativos</div>
+              <div className="text-sm text-blue-600">Efetividade de Pagamento</div>
               <div className="text-xs text-muted-foreground mt-1">
-                Excluindo cancelados
+                Pagos vs Pedidos Ativos
               </div>
             </div>
           </div>
@@ -463,21 +517,32 @@ export default function Reports({ orders }: ReportsProps) {
               <Target className="h-5 w-5 text-chart-1" />
               <span className="font-medium">Regras de Pagamento Aplicadas</span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div>
-                <h5 className="font-medium mb-2">✅ Considerados Pagos:</h5>
+                <h5 className="font-medium mb-2 text-green-700">✅ Pagos (Dinheiro em Caixa):</h5>
                 <ul className="space-y-1 text-muted-foreground">
-                  <li>• Status Fiscal: "NF Emitida"</li>
-                  <li>• Pagamento: BOLETO, Pix, Cartão Online</li>
-                  <li>• Entrega em casa (se Aprovado/Entregue/Transporte)</li>
+                  <li>• Status Fiscal: "NF Emitida" (+ não cancelado)</li>
+                  <li>• Comercial: "Entregue" (todos pagos)</li>
+                  <li>• Comercial: "Transporte" (todos pagos)</li>
+                  <li>• "Aprovado" + métodos válidos:</li>
+                  <li className="ml-4">◦ BOLETO, Parcele com Pix</li>
+                  <li className="ml-4">◦ Cartão Online, Dinheiro, PIX</li>
                 </ul>
               </div>
               <div>
-                <h5 className="font-medium mb-2">❌ Não Considerados Pagos:</h5>
+                <h5 className="font-medium mb-2 text-red-700">❌ Estornados:</h5>
                 <ul className="space-y-1 text-muted-foreground">
                   <li>• Status Comercial: "Cancelado"</li>
-                  <li>• Retirada na loja (sem confirmação de pagamento)</li>
-                  <li>• Entrega em casa se status inadequado</li>
+                  <li>• Mesmo com NF Emitida</li>
+                  <li>• Dinheiro devolvido ao cliente</li>
+                </ul>
+              </div>
+              <div>
+                <h5 className="font-medium mb-2 text-orange-700">🕒 Outros Status:</h5>
+                <ul className="space-y-1 text-muted-foreground">
+                  <li>• "Aprovado" sem método: Pendente</li>
+                  <li>• "Captação": Valor Futuro</li>
+                  <li>• Aguardando separação/faturamento</li>
                 </ul>
               </div>
             </div>

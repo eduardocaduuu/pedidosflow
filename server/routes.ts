@@ -147,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             referenciaEntregaRetirada: safeString(row['ReferênciaEntregaRetirada'] || row['Referência Entrega/Retirada']),
             telefone: safeString(row['Telefone']),
             responsavelEstrutura: safeString(row['Responsável Estrutura']),
-            usuarioFinalizacao: safeString(row['Usuário de Finalização'])
+            usuarioFinalizacao: safeString(row['Usuário de Finalização'] || row['Usuario de Finalizacao'] || row['Usuario Finalizacao'])
           };
 
           // Validate the data

@@ -118,12 +118,29 @@ export default function OrderDashboard() {
 
     if (filterOptions?.tipoEntrega && filterOptions.tipoEntrega !== "todos") {
       filtered = filtered.filter(order => {
+        const tipoEntrega = order.tipoEntrega.toLowerCase().trim();
+
         if (filterOptions.tipoEntrega === "retirada") {
-          return order.tipoEntrega.includes("Retirar na central");
+          return tipoEntrega.includes("retirar na central de serviço") ||
+                 tipoEntrega.includes("retirar na central de servico") ||
+                 tipoEntrega.includes("retirar na central de serviços") ||
+                 tipoEntrega.includes("retirar na central de servicos") ||
+                 tipoEntrega.includes("central de serviço") ||
+                 tipoEntrega.includes("central de servico") ||
+                 tipoEntrega.includes("central de serviços") ||
+                 tipoEntrega.includes("central de servicos");
         }
+
         if (filterOptions.tipoEntrega === "entrega") {
-          return order.tipoEntrega.includes("endereço da entrega");
+          return tipoEntrega.includes("no endereço da entrega") ||
+                 tipoEntrega.includes("no endereco da entrega") ||
+                 tipoEntrega.includes("endereço da entrega") ||
+                 tipoEntrega.includes("endereco da entrega") ||
+                 tipoEntrega.includes("endereço de entrega") ||
+                 tipoEntrega.includes("endereco de entrega") ||
+                 (!tipoEntrega.includes("retirar") && !tipoEntrega.includes("central"));
         }
+
         return true;
       });
     }

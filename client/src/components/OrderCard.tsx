@@ -114,7 +114,7 @@ export default function OrderCard({ order }: OrderCardProps) {
           </div>
 
           <div className="flex items-center justify-center p-2 bg-card/30 rounded-lg">
-            <StatusBadge type="payment" status={order.planoPagamento} />
+            <StatusBadge type="payment" status={order.planoPagamento} deliveryType={order.tipoEntrega} />
           </div>
 
           <div className="flex items-center justify-center p-2 bg-card/30 rounded-lg">
@@ -147,19 +147,11 @@ export default function OrderCard({ order }: OrderCardProps) {
           </div>
         </div>
 
-        {/* Data de Aprovação e Previsão sempre visíveis */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 p-3 bg-card/20 rounded-lg">
-          <div>
-            <div className="text-xs text-muted-foreground">Data de Aprovação</div>
-            <div className="text-sm font-medium" data-testid={`text-approval-visible-${order.codigoPedido}`}>
-              {order.dataAprovacao ? format(new Date(order.dataAprovacao), "dd/MM/yyyy", { locale: ptBR }) : "Pendente"}
-            </div>
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Previsão de Entrega</div>
-            <div className="text-sm font-medium" data-testid={`text-delivery-visible-${order.codigoPedido}`}>
-              {order.previsaoEntrega ? format(new Date(order.previsaoEntrega), "dd/MM/yyyy", { locale: ptBR }) : "Não definida"}
-            </div>
+        {/* Data de Aprovação sempre visível */}
+        <div className="mb-4 p-3 bg-card/20 rounded-lg">
+          <div className="text-xs text-muted-foreground">Data de Aprovação</div>
+          <div className="text-sm font-medium" data-testid={`text-approval-visible-${order.codigoPedido}`}>
+            {order.dataAprovacao ? format(new Date(order.dataAprovacao), "dd/MM/yyyy", { locale: ptBR }) : "Pendente"}
           </div>
         </div>
 

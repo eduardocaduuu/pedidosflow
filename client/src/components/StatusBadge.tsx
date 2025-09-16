@@ -5,16 +5,33 @@ interface StatusBadgeProps {
   type: "payment" | "fiscal" | "commercial" | "delivery";
   status: string;
   className?: string;
+  deliveryType?: string; // For enhanced payment logic
 }
 
-export default function StatusBadge({ type, status, className }: StatusBadgeProps) {
+export default function StatusBadge({ type, status, className, deliveryType }: StatusBadgeProps) {
   const getStatusConfig = () => {
     switch (type) {
       case "payment":
-        // Business rule: BOLETO, Pix ou Cartão de Crédito ON-LINE = já foi pago
-        const isPaid = status.includes("BOLETO") ||
-                      status.includes("Pix") ||
-                      status.includes("Cartão de Crédito ON-LINE");
+        // Business rule:
+        // 1. BOLETO, Pix ou Cartão de Crédito ON-LINE = já foi pago
+        // 2. Se é entrega em casa, o cliente pagou o frete, então está pago
+        const isHomeDelivery = deliveryType ? (() => {
+          const tipoEntrega = deliveryType.toLowerCase().trim();
+          return tipoEntrega.includes("no endereço da entrega") ||
+                 tipoEntrega.includes("no endereco da entrega") ||
+                 tipoEntrega.includes("endereço da entrega") ||
+                 tipoEntrega.includes("endereco da entrega") ||
+                 tipoEntrega.includes("endereço de entrega") ||
+                 tipoEntrega.includes("endereco de entrega") ||
+                 (!tipoEntrega.includes("retirar") && !tipoEntrega.includes("central"));
+        })() : false;
+
+        const hasPaymentMethod = status.includes("BOLETO") ||
+                               status.includes("Pix") ||
+                               status.includes("Cartão de Crédito ON-LINE");
+
+        const isPaid = hasPaymentMethod || isHomeDelivery;
+
         if (isPaid) {
           return {
             variant: "default" as const,

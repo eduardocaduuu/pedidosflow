@@ -222,7 +222,7 @@ function convertOrdersToCSV(orders: Order[]): string {
 // Generate Tableau datasource XML
 function generateTableauDatasource(orders: Order[]): string {
   return `<?xml version='1.0' encoding='utf-8' ?>
-<datasource formatted-name='pedidos.csv' inline='true' source-platform='text' version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+<datasource formatted-name='pedidos.csv' inline='true' source-platform='text' version='10.5' xmlns:user='http://www.tableausoftware.com/xml/user'>
   <connection class='textfile' directory='' filename='pedidos.csv' password='' server='' />
   <aliases enabled='yes' />
   <column datatype='string' name='ID' ordinal='0' />
@@ -264,16 +264,13 @@ function generateTableauDatasource(orders: Order[]): string {
 // Generate Tableau workbook XML
 function generateTableauWorkbook(dashboardName: string): string {
   return `<?xml version='1.0' encoding='utf-8' ?>
-<workbook version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
-  <document-format-change-manifest>
-    <AutoUpdate />
-  </document-format-change-manifest>
+<workbook source-platform='win' version='10.5' xmlns:user='http://www.tableausoftware.com/xml/user'>
   <preferences>
     <preference name='ui.encoding.shelf.height' value='24' />
     <preference name='ui.shelf.height' value='26' />
   </preferences>
   <datasources>
-    <datasource caption='pedidos' inline='true' name='federated.0123456789' version='18.1'>
+    <datasource caption='pedidos' inline='true' name='federated.0123456789' version='10.5'>
       <connection class='federated'>
         <named-connections>
           <named-connection caption='pedidos' name='textscan.0123456789'>
@@ -281,7 +278,7 @@ function generateTableauWorkbook(dashboardName: string): string {
           </named-connection>
         </named-connections>
         <relation connection='textscan.0123456789' name='pedidos.csv' table='[pedidos#csv]' type='table'>
-          <columns character-set='UTF-8' header='yes' locale='pt_BR' separator=','>
+          <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
             <column datatype='string' name='ID' ordinal='0' />
             <column datatype='string' name='Código do Pedido' ordinal='1' />
             <column datatype='string' name='Situação Fiscal' ordinal='2' />
@@ -293,8 +290,8 @@ function generateTableauWorkbook(dashboardName: string): string {
             <column datatype='string' name='Tipo de Entrega' ordinal='8' />
             <column datatype='string' name='Situação Comercial' ordinal='9' />
             <column datatype='string' name='Detalhe Situação Comercial' ordinal='10' />
-            <column datatype='datetime' name='Data de Aprovação' ordinal='11' />
-            <column datatype='datetime' name='Previsão de Entrega' ordinal='12' />
+            <column datatype='string' name='Data de Aprovação' ordinal='11' />
+            <column datatype='string' name='Previsão de Entrega' ordinal='12' />
             <column datatype='string' name='Ciclo de Captação' ordinal='13' />
             <column datatype='integer' name='Dia do Ciclo' ordinal='14' />
             <column datatype='string' name='Plano de Pagamento' ordinal='15' />
@@ -323,10 +320,10 @@ function generateTableauWorkbook(dashboardName: string): string {
             <contains-null>true</contains-null>
             <attributes>
               <attribute datatype='string' name='character-set'>&quot;UTF-8&quot;</attribute>
-              <attribute datatype='string' name='collation'>&quot;pt_BR&quot;</attribute>
+              <attribute datatype='string' name='collation'>&quot;en_US&quot;</attribute>
               <attribute datatype='string' name='field-delimiter'>&quot;,&quot;</attribute>
               <attribute datatype='string' name='header-row'>&quot;true&quot;</attribute>
-              <attribute datatype='string' name='locale'>&quot;pt_BR&quot;</attribute>
+              <attribute datatype='string' name='locale'>&quot;en_US&quot;</attribute>
               <attribute datatype='string' name='single-char'>&quot;&quot;</attribute>
             </attributes>
           </metadata-record>
@@ -340,63 +337,24 @@ function generateTableauWorkbook(dashboardName: string): string {
       <column datatype='string' name='[Valor do Pedido]' role='dimension' type='nominal' />
       <column datatype='string' name='[Tipo de Entrega]' role='dimension' type='nominal' />
       <column datatype='string' name='[Situação Comercial]' role='dimension' type='nominal' />
-      <column datatype='datetime' name='[Data de Aprovação]' role='dimension' type='ordinal' />
-      <column datatype='datetime' name='[Previsão de Entrega]' role='dimension' type='ordinal' />
       <column datatype='string' name='[Responsável Estrutura]' role='dimension' type='nominal' />
-      <extract count='-1' enabled='true' units='records'>
-        <connection class='hyper' dbname='' server='' username='' />
-      </extract>
       <layout dim-ordering='alphabetic' dim-percentage='0.5' measure-ordering='alphabetic' measure-percentage='0.4' show-structure='true' />
-      <semantic-values>
-        <semantic-value key='[Country].[Name]' value='"Brasil"' />
-      </semantic-values>
     </datasource>
   </datasources>
   <worksheets>
-    <worksheet name='Visão Geral'>
+    <worksheet name='Sheet 1'>
       <table>
         <view>
           <datasources>
             <datasource caption='pedidos' name='federated.0123456789' />
           </datasources>
-          <datasource-dependencies datasource='federated.0123456789'>
-            <column datatype='string' name='[Situação Comercial]' role='dimension' type='nominal' />
-            <column datatype='string' name='[Situação Fiscal]' role='dimension' type='nominal' />
-            <column-instance column='[Situação Comercial]' derivation='None' name='[none:Situação Comercial:nk]' pivot='key' type='nominal' />
-            <column-instance column='[Situação Fiscal]' derivation='None' name='[none:Situação Fiscal:nk]' pivot='key' type='nominal' />
-          </datasource-dependencies>
           <aggregation value='true' />
         </view>
       </table>
     </worksheet>
   </worksheets>
-  <dashboards>
-    <dashboard name='${dashboardName}'>
-      <style />
-      <size maxheight='800' maxwidth='1000' minheight='800' minwidth='1000' />
-      <zones>
-        <zone h='100000' id='0' type='layout-basic' w='100000' x='0' y='0'>
-          <zone h='98000' id='1' param='vert' type='layout-flow' w='98400' x='800' y='800'>
-            <zone h='98000' id='2' name='Visão Geral' w='98400' x='800' y='800' />
-          </zone>
-        </zone>
-      </zones>
-      <devicelayouts>
-        <devicelayout auto-generated='true' name='Tablet'>
-          <size maxheight='1024' maxwidth='768' minheight='1024' minwidth='768' />
-          <zones>
-            <zone h='100000' id='0' type='layout-basic' w='100000' x='0' y='0'>
-              <zone h='98000' id='1' param='vert' type='layout-flow' w='98400' x='800' y='800'>
-                <zone h='98000' id='2' name='Visão Geral' w='98400' x='800' y='800' />
-              </zone>
-            </zone>
-          </zones>
-        </devicelayout>
-      </devicelayouts>
-    </dashboard>
-  </dashboards>
   <windows source-height='30'>
-    <window class='worksheet' name='Visão Geral'>
+    <window class='worksheet' maximized='true' name='Sheet 1'>
       <cards>
         <edge name='left'>
           <strip size='160'>
@@ -412,10 +370,12 @@ function generateTableauWorkbook(dashboardName: string): string {
           <strip size='2147483647'>
             <card type='rows' />
           </strip>
+          <strip size='31'>
+            <card type='title' />
+          </strip>
         </edge>
       </cards>
     </window>
-    <window class='dashboard' maximized='true' name='${dashboardName}' />
   </windows>
 </workbook>`;
 }

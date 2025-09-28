@@ -1,8 +1,8 @@
 import FileUpload from '../FileUpload';
 
 export default function FileUploadExample() {
-  const handleFileProcessed = (orders: any[]) => {
-    console.log('Orders processed:', orders);
+  const handleFileProcessed = () => {
+    console.log('File processed successfully');
   };
 
   return (

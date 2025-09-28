@@ -24,7 +24,7 @@ export default function ResponsavelFilter({
 }: ResponsavelFilterProps) {
   // Get unique responsaveis and their order counts
   const responsavelStats = orders.reduce((acc, order) => {
-    const responsavel = order.responsavelEstrutura;
+    const responsavel = order.responsavelEstrutura || 'Não informado';
     if (!acc[responsavel]) {
       acc[responsavel] = 0;
     }

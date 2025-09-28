@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Users,
   TrendingUp,
@@ -13,7 +15,8 @@ import {
   Truck,
   Package,
   CheckCircle,
-  BarChart as BarChartIcon
+  BarChart as BarChartIcon,
+  Download
 } from "lucide-react";
 import {
   BarChart,
@@ -40,6 +43,47 @@ interface ReportsProps {
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff7f', '#ff1493', '#00bfff'];
 
 export default function Reports({ orders }: ReportsProps) {
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Export to Tableau function
+  const handleExportTableau = async () => {
+    try {
+      setIsExporting(true);
+      const response = await fetch('/api/export/tableau', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orders: orders,
+          dashboardName: `Dashboard de Pedidos ${new Date().toLocaleDateString('pt-BR')}`
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to export Tableau file');
+      }
+
+      // Create download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dashboard_pedidos_${new Date().toISOString().split('T')[0]}.twbx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      console.log('Tableau file exported successfully');
+    } catch (error) {
+      console.error('Error exporting Tableau file:', error);
+      alert('Erro ao exportar arquivo Tableau: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (orders.length === 0) {
     return (
       <div className="text-center py-12 space-y-4">
@@ -175,7 +219,7 @@ export default function Reports({ orders }: ReportsProps) {
 
   // Responsavel analysis
   const responsavelStats = orders.reduce((acc, order) => {
-    const responsavel = order.responsavelEstrutura;
+    const responsavel = order.responsavelEstrutura || 'Não informado';
     if (!acc[responsavel]) {
       acc[responsavel] = { count: 0, value: 0 };
     }
@@ -295,6 +339,24 @@ export default function Reports({ orders }: ReportsProps) {
 
   return (
     <div className="space-y-6">
+      {/* Export Header */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-6 bg-gradient-to-r from-card/60 via-card/40 to-card/60 backdrop-blur-xl border border-border/40 rounded-lg">
+        <div>
+          <h2 className="text-xl font-semibold mb-2">Relatórios e Análises</h2>
+          <p className="text-muted-foreground text-sm">
+            Visualize dados completos dos {orders.length} pedidos carregados e exporte para análise avançada
+          </p>
+        </div>
+        <Button
+          onClick={handleExportTableau}
+          disabled={isExporting}
+          className="flex items-center gap-2 bg-gradient-to-r from-primary to-chart-1 hover:from-primary/90 hover:to-chart-1/90"
+        >
+          <Download className="h-4 w-4" />
+          {isExporting ? 'Gerando...' : 'Exportar para Tableau'}
+        </Button>
+      </div>
+
       {/* Header Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card className="backdrop-blur-xl bg-card/60 border-border/40">

@@ -2,8 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
 import * as XLSX from "xlsx";
+import archiver from "archiver";
+import * as xml2js from "xml2js";
 import { storage } from "./storage";
-import { insertOrderSchema, type InsertOrder } from "@shared/schema";
+import { insertOrderSchema, type InsertOrder, type Order } from "@shared/schema";
 import { z } from "zod";
 
 // Configure multer for file uploads
@@ -64,6 +66,261 @@ function safeNumber(value: any, defaultValue: number = 0): number {
   if (value === null || value === undefined || value === '') return defaultValue;
   const num = Number(value);
   return isNaN(num) ? defaultValue : num;
+}
+
+// Convert orders to CSV format for Tableau
+function convertOrdersToCSV(orders: Order[]): string {
+  if (orders.length === 0) return '';
+
+  const headers = [
+    'ID', 'Código do Pedido', 'Situação Fiscal', 'Pessoa', 'Nome da Pessoa', 'Papel',
+    'Quantidade de Itens', 'Valor do Pedido', 'Tipo de Entrega', 'Situação Comercial',
+    'Detalhe Situação Comercial', 'Data de Aprovação', 'Previsão de Entrega',
+    'Ciclo de Captação', 'Dia do Ciclo', 'Plano de Pagamento', 'Logradouro',
+    'Complemento', 'Bairro', 'Cidade', 'UF', 'CEP', 'Referência',
+    'Bairro Entrega/Retirada', 'Cidade Entrega/Retirada', 'Referência Entrega/Retirada',
+    'Telefone', 'Responsável Estrutura', 'Usuário de Finalização'
+  ];
+
+  const csvRows = [headers.join(',')];
+
+  orders.forEach(order => {
+    const row = [
+      order.id || '',
+      `"${(order.codigoPedido || '').replace(/"/g, '""')}"`,
+      `"${(order.situacaoFiscal || '').replace(/"/g, '""')}"`,
+      `"${(order.pessoa || '').replace(/"/g, '""')}"`,
+      `"${(order.nomePessoa || '').replace(/"/g, '""')}"`,
+      `"${(order.papel || '').replace(/"/g, '""')}"`,
+      order.qtdeItens || 0,
+      `"${(order.valorPedido || '').replace(/"/g, '""')}"`,
+      `"${(order.tipoEntrega || '').replace(/"/g, '""')}"`,
+      `"${(order.situacaoComercial || '').replace(/"/g, '""')}"`,
+      `"${(order.detalheSituacaoComercial || '').replace(/"/g, '""')}"`,
+      order.dataAprovacao ? `"${new Date(order.dataAprovacao).toISOString()}"` : '',
+      order.previsaoEntrega ? `"${new Date(order.previsaoEntrega).toISOString()}"` : '',
+      `"${(order.cicloCaptacao || '').replace(/"/g, '""')}"`,
+      order.diaCiclo || 0,
+      `"${(order.planoPagamento || '').replace(/"/g, '""')}"`,
+      `"${(order.logradouro || '').replace(/"/g, '""')}"`,
+      `"${(order.complemento || '').replace(/"/g, '""')}"`,
+      `"${(order.bairro || '').replace(/"/g, '""')}"`,
+      `"${(order.cidade || '').replace(/"/g, '""')}"`,
+      `"${(order.uf || '').replace(/"/g, '""')}"`,
+      `"${(order.cep || '').replace(/"/g, '""')}"`,
+      `"${(order.referencia || '').replace(/"/g, '""')}"`,
+      `"${(order.bairroEntregaRetirada || '').replace(/"/g, '""')}"`,
+      `"${(order.cidadeEntregaRetirada || '').replace(/"/g, '""')}"`,
+      `"${(order.referenciaEntregaRetirada || '').replace(/"/g, '""')}"`,
+      `"${(order.telefone || '').replace(/"/g, '""')}"`,
+      `"${(order.responsavelEstrutura || '').replace(/"/g, '""')}"`,
+      `"${(order.usuarioFinalizacao || '').replace(/"/g, '""')}"`,
+    ];
+    csvRows.push(row.join(','));
+  });
+
+  return csvRows.join('\n');
+}
+
+// Generate Tableau datasource XML
+function generateTableauDatasource(orders: Order[]): string {
+  return `<?xml version='1.0' encoding='utf-8' ?>
+<datasource formatted-name='pedidos.csv' inline='true' source-platform='text' version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <connection class='textfile' directory='' filename='pedidos.csv' password='' server='' />
+  <aliases enabled='yes' />
+  <column datatype='string' name='ID' ordinal='0' />
+  <column datatype='string' name='Código do Pedido' ordinal='1' />
+  <column datatype='string' name='Situação Fiscal' ordinal='2' />
+  <column datatype='string' name='Pessoa' ordinal='3' />
+  <column datatype='string' name='Nome da Pessoa' ordinal='4' />
+  <column datatype='string' name='Papel' ordinal='5' />
+  <column datatype='integer' name='Quantidade de Itens' ordinal='6' />
+  <column datatype='string' name='Valor do Pedido' ordinal='7' />
+  <column datatype='string' name='Tipo de Entrega' ordinal='8' />
+  <column datatype='string' name='Situação Comercial' ordinal='9' />
+  <column datatype='string' name='Detalhe Situação Comercial' ordinal='10' />
+  <column datatype='datetime' name='Data de Aprovação' ordinal='11' />
+  <column datatype='datetime' name='Previsão de Entrega' ordinal='12' />
+  <column datatype='string' name='Ciclo de Captação' ordinal='13' />
+  <column datatype='integer' name='Dia do Ciclo' ordinal='14' />
+  <column datatype='string' name='Plano de Pagamento' ordinal='15' />
+  <column datatype='string' name='Logradouro' ordinal='16' />
+  <column datatype='string' name='Complemento' ordinal='17' />
+  <column datatype='string' name='Bairro' ordinal='18' />
+  <column datatype='string' name='Cidade' ordinal='19' />
+  <column datatype='string' name='UF' ordinal='20' />
+  <column datatype='string' name='CEP' ordinal='21' />
+  <column datatype='string' name='Referência' ordinal='22' />
+  <column datatype='string' name='Bairro Entrega/Retirada' ordinal='23' />
+  <column datatype='string' name='Cidade Entrega/Retirada' ordinal='24' />
+  <column datatype='string' name='Referência Entrega/Retirada' ordinal='25' />
+  <column datatype='string' name='Telefone' ordinal='26' />
+  <column datatype='string' name='Responsável Estrutura' ordinal='27' />
+  <column datatype='string' name='Usuário de Finalização' ordinal='28' />
+  <layout dim-ordering='alphabetic' dim-percentage='0.5' measure-ordering='alphabetic' measure-percentage='0.4' show-structure='true' />
+  <semantic-values>
+    <semantic-value key='[Country].[Name]' value='"Brasil"' />
+  </semantic-values>
+</datasource>`;
+}
+
+// Generate Tableau workbook XML
+function generateTableauWorkbook(dashboardName: string): string {
+  return `<?xml version='1.0' encoding='utf-8' ?>
+<workbook version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <document-format-change-manifest>
+    <AutoUpdate />
+  </document-format-change-manifest>
+  <preferences>
+    <preference name='ui.encoding.shelf.height' value='24' />
+    <preference name='ui.shelf.height' value='26' />
+  </preferences>
+  <datasources>
+    <datasource caption='pedidos' inline='true' name='federated.0123456789' version='18.1'>
+      <connection class='federated'>
+        <named-connections>
+          <named-connection caption='pedidos' name='textscan.0123456789'>
+            <connection class='textscan' directory='' filename='pedidos.csv' password='' server='' />
+          </named-connection>
+        </named-connections>
+        <relation connection='textscan.0123456789' name='pedidos.csv' table='[pedidos#csv]' type='table'>
+          <columns character-set='UTF-8' header='yes' locale='pt_BR' separator=','>
+            <column datatype='string' name='ID' ordinal='0' />
+            <column datatype='string' name='Código do Pedido' ordinal='1' />
+            <column datatype='string' name='Situação Fiscal' ordinal='2' />
+            <column datatype='string' name='Pessoa' ordinal='3' />
+            <column datatype='string' name='Nome da Pessoa' ordinal='4' />
+            <column datatype='string' name='Papel' ordinal='5' />
+            <column datatype='integer' name='Quantidade de Itens' ordinal='6' />
+            <column datatype='string' name='Valor do Pedido' ordinal='7' />
+            <column datatype='string' name='Tipo de Entrega' ordinal='8' />
+            <column datatype='string' name='Situação Comercial' ordinal='9' />
+            <column datatype='string' name='Detalhe Situação Comercial' ordinal='10' />
+            <column datatype='datetime' name='Data de Aprovação' ordinal='11' />
+            <column datatype='datetime' name='Previsão de Entrega' ordinal='12' />
+            <column datatype='string' name='Ciclo de Captação' ordinal='13' />
+            <column datatype='integer' name='Dia do Ciclo' ordinal='14' />
+            <column datatype='string' name='Plano de Pagamento' ordinal='15' />
+            <column datatype='string' name='Logradouro' ordinal='16' />
+            <column datatype='string' name='Complemento' ordinal='17' />
+            <column datatype='string' name='Bairro' ordinal='18' />
+            <column datatype='string' name='Cidade' ordinal='19' />
+            <column datatype='string' name='UF' ordinal='20' />
+            <column datatype='string' name='CEP' ordinal='21' />
+            <column datatype='string' name='Referência' ordinal='22' />
+            <column datatype='string' name='Bairro Entrega/Retirada' ordinal='23' />
+            <column datatype='string' name='Cidade Entrega/Retirada' ordinal='24' />
+            <column datatype='string' name='Referência Entrega/Retirada' ordinal='25' />
+            <column datatype='string' name='Telefone' ordinal='26' />
+            <column datatype='string' name='Responsável Estrutura' ordinal='27' />
+            <column datatype='string' name='Usuário de Finalização' ordinal='28' />
+          </columns>
+        </relation>
+        <metadata-records>
+          <metadata-record class='capability'>
+            <remote-name />
+            <remote-type>0</remote-type>
+            <parent-name>[pedidos.csv]</parent-name>
+            <remote-alias />
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='character-set'>&quot;UTF-8&quot;</attribute>
+              <attribute datatype='string' name='collation'>&quot;pt_BR&quot;</attribute>
+              <attribute datatype='string' name='field-delimiter'>&quot;,&quot;</attribute>
+              <attribute datatype='string' name='header-row'>&quot;true&quot;</attribute>
+              <attribute datatype='string' name='locale'>&quot;pt_BR&quot;</attribute>
+              <attribute datatype='string' name='single-char'>&quot;&quot;</attribute>
+            </attributes>
+          </metadata-record>
+        </metadata-records>
+      </connection>
+      <aliases enabled='yes' />
+      <column datatype='string' name='[Código do Pedido]' role='dimension' type='nominal' />
+      <column datatype='string' name='[Situação Fiscal]' role='dimension' type='nominal' />
+      <column datatype='string' name='[Nome da Pessoa]' role='dimension' type='nominal' />
+      <column datatype='integer' name='[Quantidade de Itens]' role='measure' type='quantitative' />
+      <column datatype='string' name='[Valor do Pedido]' role='dimension' type='nominal' />
+      <column datatype='string' name='[Tipo de Entrega]' role='dimension' type='nominal' />
+      <column datatype='string' name='[Situação Comercial]' role='dimension' type='nominal' />
+      <column datatype='datetime' name='[Data de Aprovação]' role='dimension' type='ordinal' />
+      <column datatype='datetime' name='[Previsão de Entrega]' role='dimension' type='ordinal' />
+      <column datatype='string' name='[Responsável Estrutura]' role='dimension' type='nominal' />
+      <extract count='-1' enabled='true' units='records'>
+        <connection class='hyper' dbname='' server='' username='' />
+      </extract>
+      <layout dim-ordering='alphabetic' dim-percentage='0.5' measure-ordering='alphabetic' measure-percentage='0.4' show-structure='true' />
+      <semantic-values>
+        <semantic-value key='[Country].[Name]' value='"Brasil"' />
+      </semantic-values>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Visão Geral'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='pedidos' name='federated.0123456789' />
+          </datasources>
+          <datasource-dependencies datasource='federated.0123456789'>
+            <column datatype='string' name='[Situação Comercial]' role='dimension' type='nominal' />
+            <column datatype='string' name='[Situação Fiscal]' role='dimension' type='nominal' />
+            <column-instance column='[Situação Comercial]' derivation='None' name='[none:Situação Comercial:nk]' pivot='key' type='nominal' />
+            <column-instance column='[Situação Fiscal]' derivation='None' name='[none:Situação Fiscal:nk]' pivot='key' type='nominal' />
+          </datasource-dependencies>
+          <aggregation value='true' />
+        </view>
+      </table>
+    </worksheet>
+  </worksheets>
+  <dashboards>
+    <dashboard name='${dashboardName}'>
+      <style />
+      <size maxheight='800' maxwidth='1000' minheight='800' minwidth='1000' />
+      <zones>
+        <zone h='100000' id='0' type='layout-basic' w='100000' x='0' y='0'>
+          <zone h='98000' id='1' param='vert' type='layout-flow' w='98400' x='800' y='800'>
+            <zone h='98000' id='2' name='Visão Geral' w='98400' x='800' y='800' />
+          </zone>
+        </zone>
+      </zones>
+      <devicelayouts>
+        <devicelayout auto-generated='true' name='Tablet'>
+          <size maxheight='1024' maxwidth='768' minheight='1024' minwidth='768' />
+          <zones>
+            <zone h='100000' id='0' type='layout-basic' w='100000' x='0' y='0'>
+              <zone h='98000' id='1' param='vert' type='layout-flow' w='98400' x='800' y='800'>
+                <zone h='98000' id='2' name='Visão Geral' w='98400' x='800' y='800' />
+              </zone>
+            </zone>
+          </zones>
+        </devicelayout>
+      </devicelayouts>
+    </dashboard>
+  </dashboards>
+  <windows source-height='30'>
+    <window class='worksheet' name='Visão Geral'>
+      <cards>
+        <edge name='left'>
+          <strip size='160'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+        </edge>
+      </cards>
+    </window>
+    <window class='dashboard' maximized='true' name='${dashboardName}' />
+  </windows>
+</workbook>`;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -233,6 +490,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching order:", error);
       res.status(500).json({ error: "Failed to fetch order" });
+    }
+  });
+
+  // Export filtered orders to Excel
+  app.post("/api/export/excel", async (req, res) => {
+    try {
+      const { orders, filename } = req.body;
+
+      if (!orders || !Array.isArray(orders)) {
+        return res.status(400).json({ error: "Invalid orders data" });
+      }
+
+      // Prepare data for Excel export
+      const excelData = orders.map((order: Order) => ({
+        'Código do Pedido': order.codigoPedido,
+        'Situação Fiscal': order.situacaoFiscal,
+        'Pessoa': order.pessoa,
+        'Nome da Pessoa': order.nomePessoa,
+        'Papel': order.papel,
+        'Quantidade de Itens': order.qtdeItens,
+        'Valor do Pedido': order.valorPedido,
+        'Tipo de Entrega': order.tipoEntrega,
+        'Situação Comercial': order.situacaoComercial,
+        'Detalhe Situação Comercial': order.detalheSituacaoComercial || '',
+        'Data de Aprovação': order.dataAprovacao ? new Date(order.dataAprovacao).toLocaleDateString('pt-BR') : '',
+        'Previsão de Entrega': order.previsaoEntrega ? new Date(order.previsaoEntrega).toLocaleDateString('pt-BR') : '',
+        'Ciclo de Captação': order.cicloCaptacao,
+        'Dia do Ciclo': order.diaCiclo,
+        'Plano de Pagamento': order.planoPagamento,
+        'Logradouro': order.logradouro || '',
+        'Complemento': order.complemento || '',
+        'Bairro': order.bairro || '',
+        'Cidade': order.cidade || '',
+        'UF': order.uf || '',
+        'CEP': order.cep || '',
+        'Referência': order.referencia || '',
+        'Bairro Entrega/Retirada': order.bairroEntregaRetirada || '',
+        'Cidade Entrega/Retirada': order.cidadeEntregaRetirada || '',
+        'Referência Entrega/Retirada': order.referenciaEntregaRetirada || '',
+        'Telefone': order.telefone || '',
+        'Responsável Estrutura': order.responsavelEstrutura || '',
+        'Usuário de Finalização': order.usuarioFinalizacao || ''
+      }));
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Pedidos Filtrados");
+
+      // Generate buffer
+      const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+      // Set headers for file download
+      const downloadFilename = filename || `pedidos_filtrados_${new Date().toISOString().split('T')[0]}.xlsx`;
+      res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+      res.send(buffer);
+
+    } catch (error) {
+      console.error("Error exporting Excel:", error);
+      res.status(500).json({
+        error: "Failed to export Excel file",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Export orders to Tableau (.twbx) format
+  app.post("/api/export/tableau", async (req, res) => {
+    try {
+      const { orders, dashboardName } = req.body;
+
+      if (!orders || !Array.isArray(orders)) {
+        return res.status(400).json({ error: "Invalid orders data" });
+      }
+
+      // Create Tableau data source XML
+      const datasourceXml = generateTableauDatasource(orders);
+
+      // Create Tableau workbook XML
+      const workbookXml = generateTableauWorkbook(dashboardName || "Dashboard de Pedidos");
+
+      // Create zip archive for .twbx
+      const archive = archiver('zip', { zlib: { level: 9 } });
+
+      // Set headers for file download
+      const downloadFilename = `${dashboardName || 'dashboard_pedidos'}_${new Date().toISOString().split('T')[0]}.twbx`;
+      res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+      res.setHeader('Content-Type', 'application/octet-stream');
+
+      // Pipe archive to response
+      archive.pipe(res);
+
+      // Add files to archive
+      archive.append(datasourceXml, { name: 'Data/Datasources/pedidos.tds' });
+      archive.append(workbookXml, { name: 'workbook.twb' });
+
+      // Create CSV data for Tableau
+      const csvData = convertOrdersToCSV(orders);
+      archive.append(csvData, { name: 'Data/Datasources/pedidos.csv' });
+
+      // Finalize archive
+      await archive.finalize();
+
+    } catch (error) {
+      console.error("Error exporting Tableau file:", error);
+      res.status(500).json({
+        error: "Failed to export Tableau file",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 

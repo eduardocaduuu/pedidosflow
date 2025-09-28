@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutGrid, Upload, Filter, Map, Moon, Sun, Loader2, BarChart3 } from "lucide-react";
+import { LayoutGrid, Upload, Filter, Map, Moon, Sun, Loader2, BarChart3, Download, FileSpreadsheet } from "lucide-react";
 import OrderCard from "./OrderCard";
 import FileUpload from "./FileUpload";
 import FilterBar, { type FilterOptions } from "./FilterBar";
@@ -172,6 +172,45 @@ export default function OrderDashboard() {
     setSelectedResponsavel(responsavel);
   };
 
+  // Export filtered orders to Excel
+  const handleExportExcel = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/export/excel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orders: filteredOrders,
+          filename: `pedidos_filtrados_${new Date().toISOString().split('T')[0]}.xlsx`
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to export Excel file');
+      }
+
+      // Create download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pedidos_filtrados_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      console.log('Excel exported successfully');
+    } catch (error) {
+      console.error('Error exporting Excel:', error);
+      setError(error instanceof Error ? error.message : 'Failed to export Excel');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-chart-3/10 relative">
       {/* Glass background overlay */}
@@ -249,10 +288,23 @@ export default function OrderDashboard() {
                 selectedResponsavel={selectedResponsavel}
                 onResponsavelChange={handleResponsavelChange}
               />
-              <FilterBar
-                onFilterChange={handleFilterChange}
-                totalOrders={filteredOrders.length}
-              />
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <FilterBar
+                  onFilterChange={handleFilterChange}
+                  totalOrders={filteredOrders.length}
+                />
+                {filteredOrders.length > 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={handleExportExcel}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 backdrop-blur-md bg-white/20 dark:bg-gray-800/30 border border-white/30 hover:bg-white/30"
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    Exportar Excel
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Loading State */}

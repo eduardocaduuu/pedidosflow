@@ -142,7 +142,7 @@ export default function OrderCard({ order }: OrderCardProps) {
           <div className="flex items-center gap-2">
             <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <span className="text-sm truncate" data-testid={`text-phone-visible-${order.codigoPedido}`}>
-              {formatPhoneNumber(order.telefone)}
+              {formatPhoneNumber(order.telefone || '')}
             </span>
           </div>
           <div className="flex items-center gap-2">

@@ -68,6 +68,103 @@ function safeNumber(value: any, defaultValue: number = 0): number {
   return isNaN(num) ? defaultValue : num;
 }
 
+// Apply filters to orders array
+function applyFiltersToOrders(orders: Order[], filters: any): Order[] {
+  if (!filters) return orders;
+
+  let filtered = [...orders];
+
+  // Apply ResponsavelFilter
+  if (filters.selectedResponsavel) {
+    filtered = filtered.filter(order =>
+      order.responsavelEstrutura === filters.selectedResponsavel
+    );
+  }
+
+  // Apply search filter
+  if (filters.search) {
+    filtered = filtered.filter(order =>
+      order.codigoPedido.toLowerCase().includes(filters.search.toLowerCase()) ||
+      order.nomePessoa.toLowerCase().includes(filters.search.toLowerCase()) ||
+      (order.responsavelEstrutura && order.responsavelEstrutura.toLowerCase().includes(filters.search.toLowerCase()))
+    );
+  }
+
+  // Apply situacaoFiscal filter
+  if (filters.situacaoFiscal && filters.situacaoFiscal !== "todos") {
+    filtered = filtered.filter(order => {
+      const statusLower = order.situacaoFiscal.toLowerCase().trim();
+
+      if (filters.situacaoFiscal === "nf-emitida") {
+        return statusLower.includes("nf emitida") || statusLower.includes("nota fiscal emitida");
+      }
+      if (filters.situacaoFiscal === "faturado") {
+        return statusLower === "faturado";
+      }
+      if (filters.situacaoFiscal === "nao-faturado") {
+        return statusLower.includes("nao faturado") || statusLower.includes("não faturado");
+      }
+      return true;
+    });
+  }
+
+  // Apply situacaoComercial filter
+  if (filters.situacaoComercial && filters.situacaoComercial !== "todos") {
+    filtered = filtered.filter(order => {
+      const statusCommercial = order.situacaoComercial.toLowerCase().trim();
+
+      if (filters.situacaoComercial === "transporte") {
+        return statusCommercial.includes("transporte");
+      }
+      if (filters.situacaoComercial === "cancelado") {
+        return statusCommercial.includes("cancelado");
+      }
+      if (filters.situacaoComercial === "entregue") {
+        return statusCommercial.includes("entregue");
+      }
+      if (filters.situacaoComercial === "aprovado") {
+        return statusCommercial.includes("aprovado");
+      }
+      if (filters.situacaoComercial === "captacao") {
+        return statusCommercial.includes("captacao") || statusCommercial.includes("captação");
+      }
+      return true;
+    });
+  }
+
+  // Apply tipoEntrega filter
+  if (filters.tipoEntrega && filters.tipoEntrega !== "todos") {
+    filtered = filtered.filter(order => {
+      const tipoEntrega = order.tipoEntrega.toLowerCase().trim();
+
+      if (filters.tipoEntrega === "retirada") {
+        return tipoEntrega.includes("retirar na central de serviço") ||
+               tipoEntrega.includes("retirar na central de servico") ||
+               tipoEntrega.includes("retirar na central de serviços") ||
+               tipoEntrega.includes("retirar na central de servicos") ||
+               tipoEntrega.includes("central de serviço") ||
+               tipoEntrega.includes("central de servico") ||
+               tipoEntrega.includes("central de serviços") ||
+               tipoEntrega.includes("central de servicos");
+      }
+
+      if (filters.tipoEntrega === "entrega") {
+        return tipoEntrega.includes("no endereço da entrega") ||
+               tipoEntrega.includes("no endereco da entrega") ||
+               tipoEntrega.includes("endereço da entrega") ||
+               tipoEntrega.includes("endereco da entrega") ||
+               tipoEntrega.includes("endereço de entrega") ||
+               tipoEntrega.includes("endereco de entrega") ||
+               (!tipoEntrega.includes("retirar") && !tipoEntrega.includes("central"));
+      }
+
+      return true;
+    });
+  }
+
+  return filtered;
+}
+
 // Convert orders to CSV format for Tableau
 function convertOrdersToCSV(orders: Order[]): string {
   if (orders.length === 0) return '';
@@ -496,14 +593,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Export filtered orders to Excel
   app.post("/api/export/excel", async (req, res) => {
     try {
-      const { orders, filename } = req.body;
+      const { filters, filename } = req.body;
 
-      if (!orders || !Array.isArray(orders)) {
-        return res.status(400).json({ error: "Invalid orders data" });
-      }
+      // Get all orders from storage and apply filters
+      const allOrders = await storage.getAllOrders();
+      const filteredOrders = applyFiltersToOrders(allOrders, filters);
 
       // Prepare data for Excel export
-      const excelData = orders.map((order: Order) => ({
+      const excelData = filteredOrders.map((order: Order) => ({
         'Código do Pedido': order.codigoPedido,
         'Situação Fiscal': order.situacaoFiscal,
         'Pessoa': order.pessoa,
@@ -563,11 +660,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Export orders to Tableau (.twbx) format
   app.post("/api/export/tableau", async (req, res) => {
     try {
-      const { orders, dashboardName } = req.body;
+      const { filters, dashboardName } = req.body;
 
-      if (!orders || !Array.isArray(orders)) {
-        return res.status(400).json({ error: "Invalid orders data" });
-      }
+      // Get all orders from storage
+      const allOrders = await storage.getAllOrders();
+      const orders = filters ? applyFiltersToOrders(allOrders, filters) : allOrders;
 
       // Create Tableau data source XML
       const datasourceXml = generateTableauDatasource(orders);

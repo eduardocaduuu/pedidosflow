@@ -18,6 +18,12 @@ export default function OrderDashboard() {
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedResponsavel, setSelectedResponsavel] = useState<string | null>(null);
+  const [currentFilters, setCurrentFilters] = useState<FilterOptions>({
+    search: '',
+    situacaoFiscal: 'todos',
+    situacaoComercial: 'todos',
+    tipoEntrega: 'todos'
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -165,6 +171,7 @@ export default function OrderDashboard() {
   };
 
   const handleFilterChange = (filters: FilterOptions) => {
+    setCurrentFilters(filters);
     applyFilters(filters);
   };
 
@@ -182,7 +189,10 @@ export default function OrderDashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          orders: filteredOrders,
+          filters: {
+            ...currentFilters,
+            selectedResponsavel
+          },
           filename: `pedidos_filtrados_${new Date().toISOString().split('T')[0]}.xlsx`
         }),
       });

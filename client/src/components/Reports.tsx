@@ -55,7 +55,7 @@ export default function Reports({ orders }: ReportsProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          orders: orders,
+          filters: null, // Export all data for reports
           dashboardName: `Dashboard de Pedidos ${new Date().toLocaleDateString('pt-BR')}`
         }),
       });

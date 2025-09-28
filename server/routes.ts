@@ -264,7 +264,7 @@ function generateTableauDatasource(orders: Order[]): string {
 // Generate Tableau workbook XML
 function generateTableauWorkbook(dashboardName: string): string {
   return `<?xml version='1.0' encoding='utf-8' ?>
-<workbook source-platform='win' version='10.5' xmlns:user='http://www.tableausoftware.com/xml/user'>
+<workbook source-build='10.5.0 (20200219.1354.1055)' source-platform='win' version='10.5' xmlns:user='http://www.tableausoftware.com/xml/user'>
   <preferences>
     <preference name='ui.encoding.shelf.height' value='24' />
     <preference name='ui.shelf.height' value='26' />
@@ -350,6 +350,17 @@ function generateTableauWorkbook(dashboardName: string): string {
           </datasources>
           <aggregation value='true' />
         </view>
+        <style />
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Automatic' />
+          </pane>
+        </panes>
+        <rows />
+        <cols />
       </table>
     </worksheet>
   </worksheets>
